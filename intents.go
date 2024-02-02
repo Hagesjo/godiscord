@@ -21,3 +21,5 @@ const (
 	IntentAutoModerationConfiguration
 	IntentAutoModerationExecution
 )
+
+// TODO: make some sensible default intents.
