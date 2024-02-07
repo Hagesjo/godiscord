@@ -83,5 +83,5 @@ func (c *restClient) GetGatewayURL() (string, error) {
 
 	slog.Info("got gateway response", "response", jsonResp)
 
-	return jsonResp.URL, nil
+	return fmt.Sprintf("%s?v=%d&encoding=json", jsonResp.URL, apiVersion), nil
 }

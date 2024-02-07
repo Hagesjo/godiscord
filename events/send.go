@@ -24,36 +24,17 @@ type IdentifyPayload struct {
 	Compress       bool       `json:"compress,omitempty"`
 	LargeThreshold int        `json:"large_threshold,omitempty"`
 	Shard          []int      `json:"shard,omitempty"`
-	Presence       *Presence  `json:"presence,omitempty"`
+	Presence       *Presence  `json:"presence"`
 	Intents        int        `json:"intents"`
 }
 
-type Properties struct {
-	OS      string `json:"os"`
-	Browser string `json:"browser"`
-	Device  string `json:"device"`
+type Resume struct {
+	OpCode  int           `json:"op"`
+	Payload ResumePayload `json:"d"`
 }
 
-type Presence struct {
-	Since      *int64      `json:"since,omitempty"`
-	Activities []*Activity `json:"activities,omitempty"`
-	Status     string      `json:"status"`
-	AFK        bool        `json:"afk"`
+type ResumePayload struct {
+	Token        string `json:"token"`
+	SessionID    string `json:"session_id"`
+	LastSequence uint64 `json:"seq"`
 }
-
-type Activity struct {
-	Name string       `json:"name"`
-	Type ActivityType `json:"type"`
-	URL  string       `json:"url,omitempty"`
-}
-
-type ActivityType uint32
-
-const (
-	ActivityGame ActivityType = iota
-	ActivityStreaming
-	ActivityListening
-	ActivityWatching
-	ActivityCustom
-	ActivityCompeting
-)
