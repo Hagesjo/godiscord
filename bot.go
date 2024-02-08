@@ -138,8 +138,8 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 			}
 		case events.OpCodeResume:
 			// Do nothing for now
-		// case events.OpCodeReconnect:
-		// TODO: Reconnect logic
+		case events.OpCodeReconnect:
+			return true, nil
 		case events.OpCodeInvalidSession:
 			slog.Info("Got invalid session.", "event", event)
 			if canResume, err := UnmarshalJSON[bool](*event.Data); err != nil {
@@ -187,6 +187,9 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 	}
 }
 
+// handleDispatch handles all dispatch events sent which the cache needs to act on.
+// For the majority of the event, it will do nothing.
+// It will log a warning if an unknown dispatch event is received.
 func (b *Bot) handleDispatch(event events.Event) error {
 	if event.Type == nil {
 		return fmt.Errorf("discord sent dispatch without type set")
@@ -195,19 +198,6 @@ func (b *Bot) handleDispatch(event events.Event) error {
 	eventType := *event.Type
 
 	switch eventType {
-	case "GUILD_CREATE":
-		guildEvent, err := UnmarshalJSON[events.GuildCreate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal create guild json: %w", err)
-		}
-
-		if guildEvent.Unavailable != nil && *guildEvent.Unavailable {
-			b.unavailableGuilds[guildEvent.ID] = guildEvent.Guild
-		} else {
-			b.guilds[guildEvent.ID] = guildEvent.Guild
-		}
-
-		b.fetchersByGuild[guildEvent.ID] = newFetcher(guildEvent)
 	case "READY":
 		readyEvent, err := UnmarshalJSON[events.Ready](*event.Data)
 		if err != nil {
@@ -226,7 +216,294 @@ func (b *Bot) handleDispatch(event events.Event) error {
 		b.sessionID = readyEvent.SessionID
 	case "RESUMED":
 		// TODO: Use this to ensure a resume worked.
+	case "APPLICATION_COMMAND_PERMISSIONS_UPDATE":
+		// Do nothing.
+	case "AUTO_MODERATION_RULE_CREATE", "AUTO_MODERATION_RULE_UPDATE", "AUTO_MODERATION_RULE_DELETE":
+		// Do nothing.
+	case "CHANNEL_CREATE", "CHANNEL_UPDATE", "CHANNEL_DELETE":
+		channel, err := UnmarshalJSON[events.Channel](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal channel: %w", err)
+		}
 
+		if channel.GuildID == nil {
+			break
+		}
+
+		f, ok := b.fetchersByGuild[*channel.GuildID]
+		if !ok {
+			slog.Warn("CHANNEL_CREATE received with a channel outside of a known guild", "guild", *channel.GuildID)
+			break
+		}
+
+		if eventType == "CHANNEL_DELETE" {
+			delete(f.channelsByID, channel.ID)
+		} else {
+			f.channelsByID[channel.ID] = channel
+		}
+	case "ENTITLEMENT_CREATE", "ENTITLEMENT_UPDATE", "ENTITLEMENT_DELETE":
+		// Do nothing.
+	case "GUILD_CREATE":
+		guildEvent, err := UnmarshalJSON[events.GuildCreate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal create guild json: %w", err)
+		}
+
+		if guildEvent.Unavailable != nil && *guildEvent.Unavailable {
+			b.unavailableGuilds[guildEvent.ID] = guildEvent.Guild
+		} else {
+			b.guilds[guildEvent.ID] = guildEvent.Guild
+		}
+
+		b.fetchersByGuild[guildEvent.ID] = newFetcher(guildEvent)
+	case "GUILD_UPDATE", "GUILD_DELETE":
+		guild, err := UnmarshalJSON[events.Guild](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild json: %w", err)
+		}
+
+		if eventType == "GUILD_UPDATE" {
+			b.guilds[guild.ID] = guild
+		} else {
+			delete(b.fetchersByGuild, guild.ID)
+			delete(b.guilds, guild.ID)
+		}
+	case "THREAD_CREATE", "THREAD_UPDATE", "THREAD_DELETE":
+		channel, err := UnmarshalJSON[events.Channel](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal channel: %w", err)
+		}
+
+		if channel.GuildID == nil {
+			break
+		}
+
+		f, ok := b.fetchersByGuild[*channel.GuildID]
+		if !ok {
+			slog.Warn("THREAD_CREATE received with a channel outside of a known guild", "guild", *channel.GuildID)
+			break
+		}
+
+		if eventType == "THREAD_DELETE" {
+			delete(f.threadsByID, channel.ID)
+		} else {
+			f.threadsByID[channel.ID] = channel
+		}
+	case "THREAD_LIST_SYNC":
+		listSyncEvent, err := UnmarshalJSON[events.ThreadListSync](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
+		}
+
+		f, ok := b.fetchersByGuild[listSyncEvent.GuildID]
+		if !ok {
+			slog.Warn("THREAD_CREATE received with a channel outside of a known guild", "guild", listSyncEvent.GuildID)
+			break
+		}
+
+		for _, thread := range listSyncEvent.Threads {
+			f.threadsByID[thread.ID] = thread
+		}
+
+	case "THREAD_MEMBER_UPDATE":
+		// Do nothing.
+	case "GUILD_AUDIT_LOG_ENTRY_CREATE":
+		// Do nothing.
+	case "GUILD_EMOJIS_UPDATE":
+		emojisUpdate, err := UnmarshalJSON[events.GuildEmojisUpdate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
+		}
+
+		guild, ok := b.guilds[emojisUpdate.GuildID]
+		if !ok {
+			slog.Warn("GUILD_EMOJIS_UPDATE sent guild_id outside of a known guild", "guild", emojisUpdate.GuildID)
+		}
+
+		guild.Emojis = emojisUpdate.Emojis
+		b.guilds[guild.ID] = guild
+	case "GUILD_STICKERS_UPDATE":
+		stickersUpdate, err := UnmarshalJSON[events.GuildStickersUpdate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
+		}
+
+		guild, ok := b.guilds[stickersUpdate.GuildID]
+		if !ok {
+			slog.Warn("GUILD_stickerS_UPDATE sent guild_id outside of a known guild", "guild", stickersUpdate.GuildID)
+		}
+
+		guild.Stickers = stickersUpdate.Stickers
+		b.guilds[guild.ID] = guild
+	case "GUILD_MEMBER_ADD":
+		memberAdd, err := UnmarshalJSON[events.GuildMemberAdd](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
+		}
+
+		f, ok := b.fetchersByGuild[memberAdd.GuildID]
+		if !ok {
+			slog.Warn("GUILD_MEMBER_ADD received with a channel outside of a known guild", "guild", memberAdd.GuildID)
+			break
+		}
+
+		f.membersByID[memberAdd.User.ID] = memberAdd.GuildMember
+	case "GUILD_MEMBER_UPDATE":
+		memberUpdate, err := UnmarshalJSON[events.GuildMemberUpdate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
+		}
+
+		f, ok := b.fetchersByGuild[memberUpdate.GuildID]
+		if !ok {
+			slog.Warn("GUILD_MEMBER_UPDATE received with a channel outside of a known guild", "guild", memberUpdate.GuildID)
+			break
+		}
+
+		member, ok := f.membersByID[memberUpdate.User.ID]
+		if !ok {
+			slog.Warn("GUILD_MEMBER_UPDATE received with unknown user", "user_id", memberUpdate.User.ID)
+			break
+		}
+
+		f.membersByID[memberUpdate.User.ID] = events.GuildMember{
+			User:                       &memberUpdate.User,
+			Nick:                       memberUpdate.Nick,
+			Avatar:                     memberUpdate.Avatar,
+			Roles:                      memberUpdate.Roles,
+			JoinedAt:                   *memberUpdate.JoinedAt,
+			PremiumSince:               memberUpdate.PremiumSince,
+			Flags:                      member.Flags,
+			Deaf:                       memberUpdate.Deaf != nil && *memberUpdate.Deaf,
+			Mute:                       memberUpdate.Mute != nil && *memberUpdate.Mute,
+			Pending:                    memberUpdate.Pending,
+			Permissions:                member.Permissions,
+			CommunicationDisabledUntil: memberUpdate.CommunicationDisabledUntil,
+		}
+	case "GUILD_MEMBER_REMOVE":
+		memberRemove, err := UnmarshalJSON[events.GuildMemberRemove](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
+		}
+
+		f, ok := b.fetchersByGuild[memberRemove.GuildID]
+		if !ok {
+			slog.Warn("GUILD_MEMBER_REMOVE received with a channel outside of a known guild", "guild", memberRemove.GuildID)
+			break
+		}
+
+		delete(f.membersByID, memberRemove.User.ID)
+	case "GUILD_MEMBERS_CHUNK":
+		chunk, err := UnmarshalJSON[events.GuildMembersChunk](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild members chunk event: %w", err)
+		}
+
+		f, ok := b.fetchersByGuild[chunk.GuildID]
+		if !ok {
+			slog.Warn("GUILD_MEMBERS_CHUNK received with a channel outside of a known guild", "guild", chunk.GuildID)
+			break
+		}
+
+		for _, member := range chunk.Members {
+			if member.User == nil {
+				continue
+			}
+
+			f.membersByID[member.User.ID] = member
+		}
+	case "GUILD_ROLE_CREATE":
+		create, err := UnmarshalJSON[events.GuildRoleCreate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild role create: %w", err)
+		}
+
+		guild, ok := b.guilds[create.GuildID]
+		if !ok {
+			slog.Warn("GUILD_ROLE_CREATE sent guild_id outside of a known guild", "guild", create.GuildID)
+		}
+
+		guild.Roles = append(guild.Roles, create.Role)
+		b.guilds[guild.ID] = guild
+	case "GUILD_ROLE_UPDATE":
+		update, err := UnmarshalJSON[events.GuildRoleCreate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild role update: %w", err)
+		}
+
+		guild, ok := b.guilds[update.GuildID]
+		if !ok {
+			slog.Warn("GUILD_ROLE_UPDATE sent guild_id outside of a known guild", "guild", update.GuildID)
+		}
+
+		for i, role := range guild.Roles {
+			if role.ID != update.Role.ID {
+				continue
+			}
+
+			guild.Roles[i] = update.Role
+			break
+		}
+
+		guild.Roles = append(guild.Roles, update.Role)
+		b.guilds[guild.ID] = guild
+	case "GUILD_ROLE_DELETE":
+		delete, err := UnmarshalJSON[events.GuildRoleCreate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild role update: %w", err)
+		}
+
+		guild, ok := b.guilds[delete.GuildID]
+		if !ok {
+			slog.Warn("GUILD_ROLE_DELETE sent guild_id outside of a known guild", "guild", delete.GuildID)
+		}
+
+		for i, role := range guild.Roles {
+			if role.ID != delete.Role.ID {
+				continue
+			}
+
+			guild.Roles = append(guild.Roles[:i], guild.Roles[i+1:]...)
+			break
+		}
+
+		b.guilds[guild.ID] = guild
+	case "GUILD_SCHEDULED_EVENT_CREATE", "GUILD_SCHEDULED_EVENT_UPDATE", "GUILD_SCHEDULED_EVENT_DELETE", "GUILD_SCHEDULED_EVENT_USER_REMOVE_EVENT", "GUILD_SCHEDULED_EVENT_USER_ADD_EVENT":
+		// Do nothing.
+	case "INTEGRATION_CREATE", "INTEGRATION_UPDATE", "INTEGRATION_DELETE":
+		// Do nothing.
+	case "INVITE_CREATE", "INVITE_DELETE":
+		// Do nothing.
+	case "MESSAGE_CREATE", "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK":
+		// Do nothing.
+	case "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL", "MESSAGE_REACTION_REMOVE_EMOJI":
+		// Do nothing.
+	case "PRESENCE_UPDATE":
+		// Do nothing.
+	case "STAGE_INSTANCE_CREATE", "STAGE_INSTANCE_UPDATE", "STAGE_INSTANCE_DELETE":
+		// Do nothing.
+	case "TYPING_START":
+		// Do nothing.
+	case "USER_UPDATE":
+		userUpdate, err := UnmarshalJSON[events.UserUpdate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
+		}
+
+		for _, f := range b.fetchersByGuild {
+			member, ok := f.membersByID[userUpdate.User.ID]
+			if !ok {
+				continue
+			}
+
+			member.User = &userUpdate.User
+			f.membersByID[userUpdate.User.ID] = member
+		}
+
+	case "VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE":
+		// Do nothing.
+	case "WEBHOOKS_UPDATE":
+		// Do nothing.
 	default:
 		slog.Warn("Unparsed dispatch event", "type", eventType)
 	}
