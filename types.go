@@ -1,4 +1,4 @@
-package events
+package discordgo
 
 import (
 	"encoding/json"
@@ -195,7 +195,7 @@ const (
 	// GuildFeatureRoleSubscriptionsEnabled indicates that the guild has enabled role subscriptions.
 	GuildFeatureRoleSubscriptionsEnabled GuildFeature = "ROLE_SUBSCRIPTIONS_ENABLED"
 
-	// GuildFeatureTicketedEventsEnabled indicates that the guild has enabled ticketed events.
+	// GuildFeatureTicketedEventsEnabled indicates that the guild has enabled ticketed events
 	GuildFeatureTicketedEventsEnabled GuildFeature = "TICKETED_EVENTS_ENABLED"
 
 	// GuildFeatureVanityURL indicates that the guild has access to set a vanity URL.
@@ -1307,6 +1307,8 @@ type baseComponent struct {
 	Type ComponentType `json:"type"`
 }
 
+// MessageActionType is what discord calls components.
+// The reason why it's called action type here is because the object is nestled in itself, calling itself an action type in that context.
 type MessageActionType struct {
 	Type ComponentType
 	// Components is a list of Button/SelectMenu/TextInput objects.
@@ -1457,3 +1459,23 @@ type MessageResolvedData struct {
 	Messages    map[string]Message           `json:"messages"`    // The IDs and partial Message objects.
 	Attachments map[string]MessageAttachment `json:"attachments"` // The IDs and attachment objects.
 }
+
+// AllowedMentions represents allowed mentions for the message.
+type AllowedMentions struct {
+	Parse       []string `json:"parse,omitempty"`        // An array of allowed mention types to parse from the content.
+	Roles       []string `json:"roles,omitempty"`        // Array of role_ids to mention (Max size of 100)
+	Users       []string `json:"users,omitempty"`        // Array of user_ids to mention (Max size of 100)
+	RepliedUser bool     `json:"replied_user,omitempty"` // For replies, whether to mention the author of the message being replied to (default false)
+}
+
+// AllowedMentionType represents the type of allowed mentions.
+type AllowedMentionType string
+
+const (
+	// AllowedMentionRole controls role mentions.
+	AllowedMentionRole AllowedMentionType = "roles"
+	// AllowedMentionUser controls user mentions.
+	AllowedMentionUser AllowedMentionType = "users"
+	// AllowedMentionEveryone controls @everyone and @here mentions.
+	AllowedMentionEveryone AllowedMentionType = "everyone"
+)

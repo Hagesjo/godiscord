@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/hagesjo/discordgo/events"
 	"github.com/hagesjo/webgockets"
 )
 
@@ -39,8 +38,8 @@ func NewBot(token, prefix string) (*Bot, error) {
 		prefix:       prefix,
 		textCommands: make(map[string]func(args []string) error),
 
-		guilds:            make(map[string]events.Guild),
-		unavailableGuilds: make(map[string]events.Guild),
+		guilds:            make(map[string]Guild),
+		unavailableGuilds: make(map[string]Guild),
 		fetchersByGuild:   make(map[string]*Fetcher),
 	}, nil
 }
@@ -59,8 +58,8 @@ type Bot struct {
 
 	textCommands map[string]func(args []string) error
 
-	unavailableGuilds map[string]events.Guild
-	guilds            map[string]events.Guild
+	unavailableGuilds map[string]Guild
+	guilds            map[string]Guild
 	fetchersByGuild   map[string]*Fetcher
 }
 
@@ -105,7 +104,6 @@ func (b *Bot) Run() error {
 // handler is the main listening loop for the bot, blocking until a disconnect happens.
 // The returned bool describes if a reconnect is possible or not.
 func (b *Bot) handler(isResuming bool) (bool, error) {
-
 	heartbeatCtx, cancelHeartbeatCtx := context.WithCancel(context.Background())
 	defer cancelHeartbeatCtx()
 
@@ -117,9 +115,9 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 
 	for {
 		var closeErr *webgockets.ErrClose
-		event, err := webgockets.ReadJSON[events.Event](ctx, b.wsClient)
+		event, err := webgockets.ReadJSON[Event](ctx, b.wsClient)
 		if errors.As(err, &closeErr) {
-			return events.ResumeableCloseEvents[int(closeErr.Code)], nil
+			return ResumeableCloseEvents[int(closeErr.Code)], nil
 		} else if errors.Is(err, context.Canceled) {
 			return true, nil
 		} else if err != nil {
@@ -131,24 +129,24 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 		}
 
 		switch event.OpCode {
-		case events.OpCodeDispatch:
+		case OpCodeDispatch:
 			slog.Info("Got dispatch.", "type", *event.Type, "event", event)
 			if err := b.handleDispatch(*event); err != nil {
 				return false, fmt.Errorf("failed to handle dispatch event: %w", err)
 			}
-		case events.OpCodeResume:
+		case OpCodeResume:
 			// Do nothing for now
-		case events.OpCodeReconnect:
+		case OpCodeReconnect:
 			return true, nil
-		case events.OpCodeInvalidSession:
+		case OpCodeInvalidSession:
 			slog.Info("Got invalid session.", "event", event)
 			if canResume, err := UnmarshalJSON[bool](*event.Data); err != nil {
 				return false, fmt.Errorf("discord sent invalid 'invalid session': %w", err)
 			} else {
 				return canResume, nil
 			}
-		case events.OpCodeHello:
-			hello, err := UnmarshalJSON[events.Hello](*event.Data)
+		case OpCodeHello:
+			hello, err := UnmarshalJSON[Hello](*event.Data)
 			if err != nil {
 				return false, fmt.Errorf("discord sent invalid hello '%s': %w", *event.Data, err)
 			}
@@ -179,7 +177,7 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 			}(heartbeatCtx)
 			heartbeatStarted = true
 
-		case events.OpCodeHeartbeatAck:
+		case OpCodeHeartbeatAck:
 			slog.Info("Got heartbeat ack event.")
 		default:
 			slog.Info("Got unknown event.", "event", fmt.Sprintf("%#v", event))
@@ -190,7 +188,7 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 // handleDispatch handles all dispatch events sent which the cache needs to act on.
 // For the majority of the event, it will do nothing.
 // It will log a warning if an unknown dispatch event is received.
-func (b *Bot) handleDispatch(event events.Event) error {
+func (b *Bot) handleDispatch(event Event) error {
 	if event.Type == nil {
 		return fmt.Errorf("discord sent dispatch without type set")
 	}
@@ -199,7 +197,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 
 	switch eventType {
 	case "READY":
-		readyEvent, err := UnmarshalJSON[events.Ready](*event.Data)
+		readyEvent, err := UnmarshalJSON[Ready](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal create guild json: %w", err)
 		}
@@ -221,7 +219,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 	case "AUTO_MODERATION_RULE_CREATE", "AUTO_MODERATION_RULE_UPDATE", "AUTO_MODERATION_RULE_DELETE":
 		// Do nothing.
 	case "CHANNEL_CREATE", "CHANNEL_UPDATE", "CHANNEL_DELETE":
-		channel, err := UnmarshalJSON[events.Channel](*event.Data)
+		channel, err := UnmarshalJSON[Channel](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal channel: %w", err)
 		}
@@ -244,7 +242,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 	case "ENTITLEMENT_CREATE", "ENTITLEMENT_UPDATE", "ENTITLEMENT_DELETE":
 		// Do nothing.
 	case "GUILD_CREATE":
-		guildEvent, err := UnmarshalJSON[events.GuildCreate](*event.Data)
+		guildEvent, err := UnmarshalJSON[GuildCreate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal create guild json: %w", err)
 		}
@@ -257,7 +255,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 
 		b.fetchersByGuild[guildEvent.ID] = newFetcher(guildEvent)
 	case "GUILD_UPDATE", "GUILD_DELETE":
-		guild, err := UnmarshalJSON[events.Guild](*event.Data)
+		guild, err := UnmarshalJSON[Guild](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild json: %w", err)
 		}
@@ -269,7 +267,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 			delete(b.guilds, guild.ID)
 		}
 	case "THREAD_CREATE", "THREAD_UPDATE", "THREAD_DELETE":
-		channel, err := UnmarshalJSON[events.Channel](*event.Data)
+		channel, err := UnmarshalJSON[Channel](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal channel: %w", err)
 		}
@@ -290,7 +288,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 			f.threadsByID[channel.ID] = channel
 		}
 	case "THREAD_LIST_SYNC":
-		listSyncEvent, err := UnmarshalJSON[events.ThreadListSync](*event.Data)
+		listSyncEvent, err := UnmarshalJSON[ThreadListSync](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
 		}
@@ -310,7 +308,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 	case "GUILD_AUDIT_LOG_ENTRY_CREATE":
 		// Do nothing.
 	case "GUILD_EMOJIS_UPDATE":
-		emojisUpdate, err := UnmarshalJSON[events.GuildEmojisUpdate](*event.Data)
+		emojisUpdate, err := UnmarshalJSON[GuildEmojisUpdate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
 		}
@@ -323,7 +321,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 		guild.Emojis = emojisUpdate.Emojis
 		b.guilds[guild.ID] = guild
 	case "GUILD_STICKERS_UPDATE":
-		stickersUpdate, err := UnmarshalJSON[events.GuildStickersUpdate](*event.Data)
+		stickersUpdate, err := UnmarshalJSON[GuildStickersUpdate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
 		}
@@ -336,7 +334,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 		guild.Stickers = stickersUpdate.Stickers
 		b.guilds[guild.ID] = guild
 	case "GUILD_MEMBER_ADD":
-		memberAdd, err := UnmarshalJSON[events.GuildMemberAdd](*event.Data)
+		memberAdd, err := UnmarshalJSON[GuildMemberAdd](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
 		}
@@ -349,7 +347,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 
 		f.membersByID[memberAdd.User.ID] = memberAdd.GuildMember
 	case "GUILD_MEMBER_UPDATE":
-		memberUpdate, err := UnmarshalJSON[events.GuildMemberUpdate](*event.Data)
+		memberUpdate, err := UnmarshalJSON[GuildMemberUpdate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
 		}
@@ -366,7 +364,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 			break
 		}
 
-		f.membersByID[memberUpdate.User.ID] = events.GuildMember{
+		f.membersByID[memberUpdate.User.ID] = GuildMember{
 			User:                       &memberUpdate.User,
 			Nick:                       memberUpdate.Nick,
 			Avatar:                     memberUpdate.Avatar,
@@ -381,7 +379,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 			CommunicationDisabledUntil: memberUpdate.CommunicationDisabledUntil,
 		}
 	case "GUILD_MEMBER_REMOVE":
-		memberRemove, err := UnmarshalJSON[events.GuildMemberRemove](*event.Data)
+		memberRemove, err := UnmarshalJSON[GuildMemberRemove](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
 		}
@@ -394,7 +392,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 
 		delete(f.membersByID, memberRemove.User.ID)
 	case "GUILD_MEMBERS_CHUNK":
-		chunk, err := UnmarshalJSON[events.GuildMembersChunk](*event.Data)
+		chunk, err := UnmarshalJSON[GuildMembersChunk](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild members chunk event: %w", err)
 		}
@@ -413,7 +411,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 			f.membersByID[member.User.ID] = member
 		}
 	case "GUILD_ROLE_CREATE":
-		create, err := UnmarshalJSON[events.GuildRoleCreate](*event.Data)
+		create, err := UnmarshalJSON[GuildRoleCreate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild role create: %w", err)
 		}
@@ -426,7 +424,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 		guild.Roles = append(guild.Roles, create.Role)
 		b.guilds[guild.ID] = guild
 	case "GUILD_ROLE_UPDATE":
-		update, err := UnmarshalJSON[events.GuildRoleCreate](*event.Data)
+		update, err := UnmarshalJSON[GuildRoleCreate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild role update: %w", err)
 		}
@@ -448,7 +446,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 		guild.Roles = append(guild.Roles, update.Role)
 		b.guilds[guild.ID] = guild
 	case "GUILD_ROLE_DELETE":
-		delete, err := UnmarshalJSON[events.GuildRoleCreate](*event.Data)
+		delete, err := UnmarshalJSON[GuildRoleCreate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild role update: %w", err)
 		}
@@ -485,7 +483,7 @@ func (b *Bot) handleDispatch(event events.Event) error {
 	case "TYPING_START":
 		// Do nothing.
 	case "USER_UPDATE":
-		userUpdate, err := UnmarshalJSON[events.UserUpdate](*event.Data)
+		userUpdate, err := UnmarshalJSON[UserUpdate](*event.Data)
 		if err != nil {
 			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
 		}
@@ -512,29 +510,30 @@ func (b *Bot) handleDispatch(event events.Event) error {
 }
 
 func (b *Bot) identify() error {
-	identifyPayload := events.Identify{
-		OpCode: events.OpCodeIdentity,
-		Payload: events.IdentifyPayload{
+	identifyPayload := Identify{
+		OpCode: OpCodeIdentity,
+		Payload: IdentifyPayload{
 			Token: b.token,
 			Intents: IntentGuilds | IntentGuildMembers | IntentGuildModeration | IntentGuildEmojisAndStickers |
 				IntentGuildIntegrations | IntentGuildWebhooks | IntentGuildInvites | IntentGuildVoiceStates |
 				IntentGuildPresences | IntentGuildMessages | IntentGuildMessageReactions | IntentGuildMessageTyping |
 				IntentDirectMessages | IntentDirectMessageReactions | IntentDirectMessageTyping | IntentMessageContent |
 				IntentGuildScheduledEvents | IntentAutoModerationConfiguration | IntentAutoModerationExecution,
-			Properties: events.Properties{
+			// Intents: IntentGuilds | IntentGuildMessages | IntentDirectMessages,
+			Properties: Properties{
 				OS:      "raspbian",
 				Browser: "webgockets",
 				Device:  "discordgo",
 			},
-			Presence: &events.Presence{
-				Activities: []*events.Activity{
+			Presence: &Presence{
+				Activities: []*Activity{
 					{
 						Name: "developing simulator or something",
-						Type: events.ActivityGame,
+						Type: ActivityGame,
 						URL:  "https://github.com/Hagesjo/webgockets",
 					},
 				},
-				Status: events.UserStatusOnline,
+				Status: UserStatusOnline,
 				AFK:    false,
 			},
 		},
@@ -548,9 +547,9 @@ func (b *Bot) identify() error {
 }
 
 func (b *Bot) resume() error {
-	resume := events.Resume{
-		OpCode: events.OpCodeResume,
-		Payload: events.ResumePayload{
+	resume := Resume{
+		OpCode: OpCodeResume,
+		Payload: ResumePayload{
 			Token:     b.token,
 			SessionID: b.sessionID,
 		},
@@ -583,8 +582,8 @@ func (b *Bot) heartbeater(ctx context.Context) error {
 		case <-ctx.Done():
 			return nil
 		case <-ticker.C:
-			if _, err := b.wsClient.WriteJSON(events.Heartbeat{
-				OpCode: events.OpCodeHeartbeat,
+			if _, err := b.wsClient.WriteJSON(Heartbeat{
+				OpCode: OpCodeHeartbeat,
 			}); err != nil {
 				return fmt.Errorf("failed to send heartbeat: %w", err)
 			}

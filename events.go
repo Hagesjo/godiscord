@@ -1,4 +1,4 @@
-package events
+package discordgo
 
 import "encoding/json"
 
@@ -56,4 +56,8 @@ type Event struct {
 	OpCode         int              `json:"op,omitempty"`
 	SequenceNumber *uint64          `json:"s,omitempty"`
 	Data           *json.RawMessage `json:"d,omitempty"`
+}
+
+type DispatchEvent interface {
+	Name() string
 }

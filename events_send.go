@@ -1,4 +1,4 @@
-package events
+package discordgo
 
 type Heartbeat struct {
 	OpCode       int  `json:"op"`

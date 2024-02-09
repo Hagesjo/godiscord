@@ -1,12 +1,12 @@
 package discordgo
 
-import "github.com/hagesjo/discordgo/events"
+// TODO: Fetcher is not really the name I'm looking for... Context? Taken by stdlib tho.
 
-func newFetcher(guildEvent events.GuildCreate) *Fetcher {
+func newFetcher(guildEvent GuildCreate) *Fetcher {
 	fetcher := Fetcher{
-		membersByID:  make(map[string]events.GuildMember),
-		channelsByID: make(map[string]events.Channel),
-		threadsByID:  make(map[string]events.Channel),
+		membersByID:  make(map[string]GuildMember),
+		channelsByID: make(map[string]Channel),
+		threadsByID:  make(map[string]Channel),
 	}
 	for _, member := range guildEvent.Members {
 		if member.User == nil {
@@ -29,7 +29,8 @@ func newFetcher(guildEvent events.GuildCreate) *Fetcher {
 
 type Fetcher struct {
 	guildID      string
-	membersByID  map[string]events.GuildMember
-	channelsByID map[string]events.Channel
-	threadsByID  map[string]events.Channel
+	membersByID  map[string]GuildMember
+	channelsByID map[string]Channel
+	threadsByID  map[string]Channel
+	restClient   restClient
 }
