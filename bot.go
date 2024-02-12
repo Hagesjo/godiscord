@@ -8,6 +8,8 @@ import (
 	"math"
 	"math/rand"
 	"net/http"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/hagesjo/webgockets"
@@ -33,16 +35,20 @@ func NewBot(token, prefix string) (*Bot, error) {
 		wsClient:   wsClient,
 		restClient: restClient,
 
-		token:        token,
-		gatewayURL:   gatewayURL, // NOTE: discord doesn't want this cached too long.
-		prefix:       prefix,
-		textCommands: make(map[string]func(args []string) error),
+		token:          token,
+		gatewayURL:     gatewayURL, // NOTE: discord doesn't want this cached too long.
+		prefix:         prefix,
+		textCommands:   make(map[string]TextCommandFunc),
+		eventListeners: make(map[string]eventHandler),
 
 		guilds:            make(map[string]Guild),
 		unavailableGuilds: make(map[string]Guild),
 		fetchersByGuild:   make(map[string]*Fetcher),
 	}, nil
 }
+
+type TextCommandFunc func(*Fetcher, []string, Channel) error
+type EventListenFunc func(*Fetcher, DispatchEvent) error
 
 type Bot struct {
 	wsClient   *webgockets.Client
@@ -56,15 +62,37 @@ type Bot struct {
 	resumeGatewayURL  string
 	sessionID         string
 
-	textCommands map[string]func(args []string) error
+	textCommands   map[string]TextCommandFunc
+	eventListeners map[string]eventHandler
 
 	unavailableGuilds map[string]Guild
 	guilds            map[string]Guild
 	fetchersByGuild   map[string]*Fetcher
 }
 
-func (b *Bot) RegisterTextCommand(command string, handler func(args []string) error) {
+// RegisterTextCommand registers a text command.
+// handler will be called when a text is received in either DM:s or in a channel.
+// command must be a single word, only include alphanumeric and -_, and it should start with a letter.
+func (b *Bot) RegisterTextCommand(command string, handler TextCommandFunc) error {
+	command = strings.ToLower(strings.TrimPrefix(command, b.prefix))
+	re := regexp.MustCompile(`[a-z][a-z0-9-_]`)
+	if !re.MatchString(command) {
+		return fmt.Errorf("invalid command name")
+	}
+
 	b.textCommands[command] = handler
+
+	return nil
+}
+
+func (b *Bot) RegisterEventListener(handler any) error {
+	eventHandler, err := eventHandlerFromInterface(handler)
+	if err != nil {
+		return fmt.Errorf("failed to register event: %w", err)
+	}
+	b.eventListeners[eventHandler.name()] = eventHandler
+
+	return nil
 }
 
 func (b *Bot) Run() error {
@@ -253,7 +281,7 @@ func (b *Bot) handleDispatch(event Event) error {
 			b.guilds[guildEvent.ID] = guildEvent.Guild
 		}
 
-		b.fetchersByGuild[guildEvent.ID] = newFetcher(guildEvent)
+		b.fetchersByGuild[guildEvent.ID] = newFetcher(guildEvent, b.restClient)
 	case "GUILD_UPDATE", "GUILD_DELETE":
 		guild, err := UnmarshalJSON[Guild](*event.Data)
 		if err != nil {
@@ -472,7 +500,26 @@ func (b *Bot) handleDispatch(event Event) error {
 		// Do nothing.
 	case "INVITE_CREATE", "INVITE_DELETE":
 		// Do nothing.
-	case "MESSAGE_CREATE", "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK":
+	case "MESSAGE_CREATE":
+		messageCreate, err := UnmarshalJSON[MessageCreate](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal message create event: %w", err)
+		}
+
+		if strings.HasPrefix(messageCreate.Content, b.prefix) {
+			s := strings.Fields(messageCreate.Content[1:])
+			command, ok := b.textCommands[s[0]]
+			if ok {
+				fetcher := b.fetchersByGuild[messageCreate.GuildID]
+				channel := fetcher.channelsByID[messageCreate.ChannelID]
+
+				if err := command(fetcher, s[1:], channel); err != nil {
+
+				}
+			}
+
+		}
+	case "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK":
 		// Do nothing.
 	case "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL", "MESSAGE_REACTION_REMOVE_EMOJI":
 		// Do nothing.
@@ -504,6 +551,10 @@ func (b *Bot) handleDispatch(event Event) error {
 		// Do nothing.
 	default:
 		slog.Warn("Unparsed dispatch event", "type", eventType)
+	}
+
+	if eventHandler, ok := b.eventListeners[eventType]; ok {
+
 	}
 
 	return nil

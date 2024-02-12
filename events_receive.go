@@ -1,6 +1,9 @@
 package discordgo
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 // Hello represents the message sent on connection to the websocket, defining the heartbeat interval.
 type Hello struct {
@@ -532,8 +535,16 @@ type MessageReactionAdd struct {
 	MessageAuthorID string       `json:"message_author_id,omitempty"` // ID of the user who authored the message which was reacted to.
 }
 
-func (e *MessageReactionAdd) Name() string {
+type messageReactionAddHandler struct {
+	f func(*Fetcher, MessageReactionAdd) error
+}
+
+func (e messageReactionAddHandler) Name() string {
 	return "MESSAGE_REACTION_ADD"
+}
+
+func (e messageReactionAddHandler) run(fetcher *Fetcher, ev any) error {
+	return e.f(fetcher, ev.(MessageReactionAdd))
 }
 
 // MessageReactionRemove is sent when a user removes a reaction from a message.
@@ -663,4 +674,19 @@ type WebhooksUpdate struct {
 
 func (e *WebhooksUpdate) Name() string {
 	return "WEBHOOKS_UPDATE"
+}
+
+type eventHandler interface {
+	run(*Fetcher, any) error
+	name() string
+}
+
+func eventHandlerFromInterface(iface any) (eventHandler, error) {
+	switch v := iface.(type) {
+	case func(*Fetcher, MessageReactionAdd) error:
+		return messageReactionAddHandler{f: v}, nil
+
+	default:
+		return nil, fmt.Errorf("unknown event")
+	}
 }

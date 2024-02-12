@@ -2,11 +2,12 @@ package discordgo
 
 // TODO: Fetcher is not really the name I'm looking for... Context? Taken by stdlib tho.
 
-func newFetcher(guildEvent GuildCreate) *Fetcher {
+func newFetcher(guildEvent GuildCreate, restClient *restClient) *Fetcher {
 	fetcher := Fetcher{
 		membersByID:  make(map[string]GuildMember),
 		channelsByID: make(map[string]Channel),
 		threadsByID:  make(map[string]Channel),
+		restClient:   restClient,
 	}
 	for _, member := range guildEvent.Members {
 		if member.User == nil {
@@ -32,5 +33,11 @@ type Fetcher struct {
 	membersByID  map[string]GuildMember
 	channelsByID map[string]Channel
 	threadsByID  map[string]Channel
-	restClient   restClient
+	restClient   *restClient
+}
+
+func (f *Fetcher) Send(channelID, content string) error {
+	return f.restClient.MessageSend(channelID, MessageCreateRequest{
+		Content: content,
+	})
 }
