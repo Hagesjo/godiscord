@@ -223,6 +223,8 @@ func (b *Bot) handleDispatch(event Event) error {
 
 	eventType := *event.Type
 
+	var ev any
+
 	switch eventType {
 	case "READY":
 		readyEvent, err := UnmarshalJSON[Ready](*event.Data)
@@ -522,6 +524,12 @@ func (b *Bot) handleDispatch(event Event) error {
 	case "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK":
 		// Do nothing.
 	case "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL", "MESSAGE_REACTION_REMOVE_EMOJI":
+		reactionAdd, err := UnmarshalJSON[MessageReactionAdd](*event.Data)
+		if err != nil {
+			return fmt.Errorf("failed to unmarshal reaction add: %w", err)
+		}
+
+		ev = reactionAdd
 		// Do nothing.
 	case "PRESENCE_UPDATE":
 		// Do nothing.
@@ -553,8 +561,20 @@ func (b *Bot) handleDispatch(event Event) error {
 		slog.Warn("Unparsed dispatch event", "type", eventType)
 	}
 
-	if eventHandler, ok := b.eventListeners[eventType]; ok {
+	fmt.Println(ev)
+	switch e := ev.(type) {
+	case guildEvent:
+		if eventHandler, ok := b.eventListeners[eventType]; ok {
+			fmt.Println()
+			fetcher, ok := b.fetchersByGuild[e.guild()]
+			if !ok {
+				return fmt.Errorf("no fetcher found for guild")
+			}
 
+			return eventHandler.run(fetcher, ev)
+		}
+	default:
+		fmt.Println("fail")
 	}
 
 	return nil

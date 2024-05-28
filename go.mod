@@ -2,6 +2,6 @@ module github.com/hagesjo/discordgo
 
 go 1.21.3
 
-require github.com/hagesjo/webgockets v0.2.1
+require github.com/hagesjo/webgockets v0.2.2
 
-replace github.com/hagesjo/webgockets => /Users/andreas.hagesjo/go/webgockets
+// replace github.com/hagesjo/webgockets => /Users/andreas.hagesjo/go/webgockets

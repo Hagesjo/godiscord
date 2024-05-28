@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type guildEvent interface {
+	guild() string
+}
+
 // Hello represents the message sent on connection to the websocket, defining the heartbeat interval.
 type Hello struct {
 	HeartbeatInterval int `json:"heartbeat_interval"` // Interval (in milliseconds) an app should heartbeat with.
@@ -535,11 +539,15 @@ type MessageReactionAdd struct {
 	MessageAuthorID string       `json:"message_author_id,omitempty"` // ID of the user who authored the message which was reacted to.
 }
 
+func (m MessageReactionAdd) guild() string {
+	return m.GuildID
+}
+
 type messageReactionAddHandler struct {
 	f func(*Fetcher, MessageReactionAdd) error
 }
 
-func (e messageReactionAddHandler) Name() string {
+func (e messageReactionAddHandler) name() string {
 	return "MESSAGE_REACTION_ADD"
 }
 
