@@ -18,3 +18,12 @@ func UnmarshalJSON[T any](data json.RawMessage) (T, error) {
 
 	return ret, nil
 }
+
+func MustUnmarshalJSON[T any](data json.RawMessage) T {
+	ret, err := UnmarshalJSON[T](data)
+	if err != nil {
+		panic(err)
+	}
+
+	return ret
+}

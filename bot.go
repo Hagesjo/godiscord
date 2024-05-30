@@ -245,14 +245,16 @@ func (b *Bot) handleDispatch(event Event) error {
 	case "RESUMED":
 		// TODO: Use this to ensure a resume worked.
 	case "APPLICATION_COMMAND_PERMISSIONS_UPDATE":
-		// Do nothing.
-	case "AUTO_MODERATION_RULE_CREATE", "AUTO_MODERATION_RULE_UPDATE", "AUTO_MODERATION_RULE_DELETE":
-		// Do nothing.
-	case "CHANNEL_CREATE", "CHANNEL_UPDATE", "CHANNEL_DELETE":
-		channel, err := UnmarshalJSON[Channel](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal channel: %w", err)
-		}
+		ev = MustUnmarshalJSON[ApplicationCommandPermissionsUpdate](*event.Data)
+	case "AUTO_MODERATION_RULE_CREATE":
+		ev = MustUnmarshalJSON[AutoModerationRuleCreate](*event.Data)
+	case "AUTO_MODERATION_RULE_UPDATE":
+		ev = MustUnmarshalJSON[AutoModerationRuleUpdate](*event.Data)
+	case "AUTO_MODERATION_RULE_DELETE":
+		ev = MustUnmarshalJSON[AutoModerationRuleDelete](*event.Data)
+	case "CHANNEL_CREATE":
+		channelCreate := MustUnmarshalJSON[ChannelUpdate](*event.Data)
+		channel := channelCreate.Channel
 
 		if channel.GuildID == nil {
 			break
@@ -264,18 +266,51 @@ func (b *Bot) handleDispatch(event Event) error {
 			break
 		}
 
-		if eventType == "CHANNEL_DELETE" {
-			delete(f.channelsByID, channel.ID)
-		} else {
-			f.channelsByID[channel.ID] = channel
+		f.channelsByID[channel.ID] = channel
+
+		ev = channelCreate
+	case "CHANNEL_UPDATE":
+		channelUpdate := MustUnmarshalJSON[ChannelUpdate](*event.Data)
+		channel := channelUpdate.Channel
+
+		if channel.GuildID == nil {
+			break
 		}
-	case "ENTITLEMENT_CREATE", "ENTITLEMENT_UPDATE", "ENTITLEMENT_DELETE":
-		// Do nothing.
+
+		f, ok := b.fetchersByGuild[*channel.GuildID]
+		if !ok {
+			slog.Warn("CHANNEL_UPDATE received with a channel outside of a known guild", "guild", *channel.GuildID)
+			break
+		}
+
+		f.channelsByID[channel.ID] = channel
+
+		ev = channelUpdate
+	case "CHANNEL_DELETE":
+		channelDelete := MustUnmarshalJSON[ChannelDelete](*event.Data)
+		channel := channelDelete.Channel
+
+		if channel.GuildID == nil {
+			break
+		}
+
+		f, ok := b.fetchersByGuild[*channel.GuildID]
+		if !ok {
+			slog.Warn("CHANNEL_DELETE received with a channel outside of a known guild", "guild", *channel.GuildID)
+			break
+		}
+
+		delete(f.channelsByID, channel.ID)
+
+		ev = channelDelete
+	case "ENTITLEMENT_CREATE":
+		ev = MustUnmarshalJSON[EntitlementCreate](*event.Data)
+	case "ENTITLEMENT_UPDATE":
+		ev = MustUnmarshalJSON[EntitlementUpdate](*event.Data)
+	case "ENTITLEMENT_DELETE":
+		ev = MustUnmarshalJSON[EntitlementDelete](*event.Data)
 	case "GUILD_CREATE":
-		guildEvent, err := UnmarshalJSON[GuildCreate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal create guild json: %w", err)
-		}
+		guildEvent := MustUnmarshalJSON[GuildCreate](*event.Data)
 
 		if guildEvent.Unavailable != nil && *guildEvent.Unavailable {
 			b.unavailableGuilds[guildEvent.ID] = guildEvent.Guild
@@ -284,27 +319,29 @@ func (b *Bot) handleDispatch(event Event) error {
 		}
 
 		b.fetchersByGuild[guildEvent.ID] = newFetcher(guildEvent, b.restClient)
-	case "GUILD_UPDATE", "GUILD_DELETE":
-		guild, err := UnmarshalJSON[Guild](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild json: %w", err)
-		}
 
-		if eventType == "GUILD_UPDATE" {
-			b.guilds[guild.ID] = guild
-		} else {
-			delete(b.fetchersByGuild, guild.ID)
-			delete(b.guilds, guild.ID)
-		}
-	case "THREAD_CREATE", "THREAD_UPDATE", "THREAD_DELETE":
-		channel, err := UnmarshalJSON[Channel](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal channel: %w", err)
-		}
+		ev = guildEvent
+	case "GUILD_UPDATE":
+		guildUpdate := MustUnmarshalJSON[GuildDelete](*event.Data)
 
-		if channel.GuildID == nil {
+		b.guilds[guildUpdate.Guild.ID] = guildUpdate.Guild
+
+		ev = guildUpdate
+	case "GUILD_DELETE":
+		guildDelete := MustUnmarshalJSON[GuildDelete](*event.Data)
+
+		delete(b.fetchersByGuild, guildDelete.Guild.ID)
+		delete(b.guilds, guildDelete.Guild.ID)
+
+		ev = guildDelete
+	case "THREAD_CREATE":
+		thread := MustUnmarshalJSON[ThreadCreate](*event.Data)
+
+		if thread.Channel.GuildID == nil {
 			break
 		}
+
+		channel := thread.Channel
 
 		f, ok := b.fetchersByGuild[*channel.GuildID]
 		if !ok {
@@ -312,20 +349,51 @@ func (b *Bot) handleDispatch(event Event) error {
 			break
 		}
 
-		if eventType == "THREAD_DELETE" {
-			delete(f.threadsByID, channel.ID)
-		} else {
-			f.threadsByID[channel.ID] = channel
+		f.threadsByID[channel.ID] = channel
+
+		ev = thread
+	case "THREAD_UPDATE":
+		thread := MustUnmarshalJSON[ThreadUpdate](*event.Data)
+
+		if thread.Channel.GuildID == nil {
+			break
 		}
+
+		channel := thread.Channel
+
+		f, ok := b.fetchersByGuild[*channel.GuildID]
+		if !ok {
+			slog.Warn("THREAD_UPDATE received with a channel outside of a known guild", "guild", *channel.GuildID)
+			break
+		}
+
+		f.threadsByID[channel.ID] = channel
+
+		ev = thread
+	case "THREAD_DELETE":
+		thread := MustUnmarshalJSON[ThreadDelete](*event.Data)
+
+		if thread.Channel.GuildID == nil {
+			break
+		}
+
+		channel := thread.Channel
+
+		f, ok := b.fetchersByGuild[*channel.GuildID]
+		if !ok {
+			slog.Warn("THREAD_DELETE received with a channel outside of a known guild", "guild", *channel.GuildID)
+			break
+		}
+
+		delete(f.threadsByID, channel.ID)
+
+		ev = thread
 	case "THREAD_LIST_SYNC":
-		listSyncEvent, err := UnmarshalJSON[ThreadListSync](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
-		}
+		listSyncEvent := MustUnmarshalJSON[ThreadListSync](*event.Data)
 
 		f, ok := b.fetchersByGuild[listSyncEvent.GuildID]
 		if !ok {
-			slog.Warn("THREAD_CREATE received with a channel outside of a known guild", "guild", listSyncEvent.GuildID)
+			slog.Warn("THREAD_LIST_SYNC received with a channel outside of a known guild", "guild", listSyncEvent.GuildID)
 			break
 		}
 
@@ -333,15 +401,15 @@ func (b *Bot) handleDispatch(event Event) error {
 			f.threadsByID[thread.ID] = thread
 		}
 
+		ev = listSyncEvent
+	case "THREAD_MEMBERS_UPDATE":
+		ev = MustUnmarshalJSON[ThreadMembersUpdate](*event.Data)
 	case "THREAD_MEMBER_UPDATE":
-		// Do nothing.
+		ev = MustUnmarshalJSON[ThreadMemberUpdate](*event.Data)
 	case "GUILD_AUDIT_LOG_ENTRY_CREATE":
-		// Do nothing.
+		// Do nothing
 	case "GUILD_EMOJIS_UPDATE":
-		emojisUpdate, err := UnmarshalJSON[GuildEmojisUpdate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
-		}
+		emojisUpdate := MustUnmarshalJSON[GuildEmojisUpdate](*event.Data)
 
 		guild, ok := b.guilds[emojisUpdate.GuildID]
 		if !ok {
@@ -350,24 +418,22 @@ func (b *Bot) handleDispatch(event Event) error {
 
 		guild.Emojis = emojisUpdate.Emojis
 		b.guilds[guild.ID] = guild
+
+		ev = emojisUpdate
 	case "GUILD_STICKERS_UPDATE":
-		stickersUpdate, err := UnmarshalJSON[GuildStickersUpdate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal thread list sync event: %w", err)
-		}
+		stickersUpdate := MustUnmarshalJSON[GuildStickersUpdate](*event.Data)
 
 		guild, ok := b.guilds[stickersUpdate.GuildID]
 		if !ok {
-			slog.Warn("GUILD_stickerS_UPDATE sent guild_id outside of a known guild", "guild", stickersUpdate.GuildID)
+			slog.Warn("GUILD_STICKERS_UPDATE sent guild_id outside of a known guild", "guild", stickersUpdate.GuildID)
 		}
 
 		guild.Stickers = stickersUpdate.Stickers
 		b.guilds[guild.ID] = guild
+
+		ev = stickersUpdate
 	case "GUILD_MEMBER_ADD":
-		memberAdd, err := UnmarshalJSON[GuildMemberAdd](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
-		}
+		memberAdd := MustUnmarshalJSON[GuildMemberAdd](*event.Data)
 
 		f, ok := b.fetchersByGuild[memberAdd.GuildID]
 		if !ok {
@@ -376,11 +442,10 @@ func (b *Bot) handleDispatch(event Event) error {
 		}
 
 		f.membersByID[memberAdd.User.ID] = memberAdd.GuildMember
+
+		ev = memberAdd
 	case "GUILD_MEMBER_UPDATE":
-		memberUpdate, err := UnmarshalJSON[GuildMemberUpdate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
-		}
+		memberUpdate := MustUnmarshalJSON[GuildMemberUpdate](*event.Data)
 
 		f, ok := b.fetchersByGuild[memberUpdate.GuildID]
 		if !ok {
@@ -408,11 +473,10 @@ func (b *Bot) handleDispatch(event Event) error {
 			Permissions:                member.Permissions,
 			CommunicationDisabledUntil: memberUpdate.CommunicationDisabledUntil,
 		}
+
+		ev = memberUpdate
 	case "GUILD_MEMBER_REMOVE":
-		memberRemove, err := UnmarshalJSON[GuildMemberRemove](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
-		}
+		memberRemove := MustUnmarshalJSON[GuildMemberRemove](*event.Data)
 
 		f, ok := b.fetchersByGuild[memberRemove.GuildID]
 		if !ok {
@@ -421,11 +485,10 @@ func (b *Bot) handleDispatch(event Event) error {
 		}
 
 		delete(f.membersByID, memberRemove.User.ID)
+
+		ev = memberRemove
 	case "GUILD_MEMBERS_CHUNK":
-		chunk, err := UnmarshalJSON[GuildMembersChunk](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild members chunk event: %w", err)
-		}
+		chunk := MustUnmarshalJSON[GuildMembersChunk](*event.Data)
 
 		f, ok := b.fetchersByGuild[chunk.GuildID]
 		if !ok {
@@ -440,11 +503,10 @@ func (b *Bot) handleDispatch(event Event) error {
 
 			f.membersByID[member.User.ID] = member
 		}
+
+		ev = chunk
 	case "GUILD_ROLE_CREATE":
-		create, err := UnmarshalJSON[GuildRoleCreate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild role create: %w", err)
-		}
+		create := MustUnmarshalJSON[GuildRoleCreate](*event.Data)
 
 		guild, ok := b.guilds[create.GuildID]
 		if !ok {
@@ -453,11 +515,10 @@ func (b *Bot) handleDispatch(event Event) error {
 
 		guild.Roles = append(guild.Roles, create.Role)
 		b.guilds[guild.ID] = guild
+
+		ev = create
 	case "GUILD_ROLE_UPDATE":
-		update, err := UnmarshalJSON[GuildRoleCreate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild role update: %w", err)
-		}
+		update := MustUnmarshalJSON[GuildRoleCreate](*event.Data)
 
 		guild, ok := b.guilds[update.GuildID]
 		if !ok {
@@ -475,11 +536,10 @@ func (b *Bot) handleDispatch(event Event) error {
 
 		guild.Roles = append(guild.Roles, update.Role)
 		b.guilds[guild.ID] = guild
+
+		ev = update
 	case "GUILD_ROLE_DELETE":
-		delete, err := UnmarshalJSON[GuildRoleCreate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild role update: %w", err)
-		}
+		delete := MustUnmarshalJSON[GuildRoleCreate](*event.Data)
 
 		guild, ok := b.guilds[delete.GuildID]
 		if !ok {
@@ -496,17 +556,30 @@ func (b *Bot) handleDispatch(event Event) error {
 		}
 
 		b.guilds[guild.ID] = guild
-	case "GUILD_SCHEDULED_EVENT_CREATE", "GUILD_SCHEDULED_EVENT_UPDATE", "GUILD_SCHEDULED_EVENT_DELETE", "GUILD_SCHEDULED_EVENT_USER_REMOVE_EVENT", "GUILD_SCHEDULED_EVENT_USER_ADD_EVENT":
-		// Do nothing.
-	case "INTEGRATION_CREATE", "INTEGRATION_UPDATE", "INTEGRATION_DELETE":
-		// Do nothing.
-	case "INVITE_CREATE", "INVITE_DELETE":
-		// Do nothing.
+
+		ev = delete
+	case "GUILD_SCHEDULED_EVENT_CREATE":
+		ev = MustUnmarshalJSON[GuildScheduledEventCreate](*event.Data)
+	case "GUILD_SCHEDULED_EVENT_UPDATE":
+		ev = MustUnmarshalJSON[GuildScheduledEventUpdate](*event.Data)
+	case "GUILD_SCHEDULED_EVENT_DELETE":
+		ev = MustUnmarshalJSON[GuildScheduledEventDelete](*event.Data)
+	case "GUILD_SCHEDULED_EVENT_USER_REMOVE_EVENT":
+		ev = MustUnmarshalJSON[guildScheduledEventUserRemoveEventHandler](*event.Data)
+	case "GUILD_SCHEDULED_EVENT_USER_ADD_EVENT":
+		ev = MustUnmarshalJSON[guildScheduledEventUserAddEventHandler](*event.Data)
+	case "INTEGRATION_CREATE":
+		ev = MustUnmarshalJSON[IntegrationCreate](*event.Data)
+	case "INTEGRATION_UPDATE":
+		ev = MustUnmarshalJSON[IntegrationUpdate](*event.Data)
+	case "INTEGRATION_DELETE":
+		ev = MustUnmarshalJSON[IntegrationDelete](*event.Data)
+	case "INVITE_CREATE":
+		ev = MustUnmarshalJSON[InviteCreate](*event.Data)
+	case "INVITE_DELETE":
+		ev = MustUnmarshalJSON[InviteDelete](*event.Data)
 	case "MESSAGE_CREATE":
-		messageCreate, err := UnmarshalJSON[MessageCreate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal message create event: %w", err)
-		}
+		messageCreate := MustUnmarshalJSON[MessageCreate](*event.Data)
 
 		if strings.HasPrefix(messageCreate.Content, b.prefix) {
 			s := strings.Fields(messageCreate.Content[1:])
@@ -519,29 +592,37 @@ func (b *Bot) handleDispatch(event Event) error {
 
 				}
 			}
-
-		}
-	case "MESSAGE_UPDATE", "MESSAGE_DELETE", "MESSAGE_DELETE_BULK":
-		// Do nothing.
-	case "MESSAGE_REACTION_ADD", "MESSAGE_REACTION_REMOVE", "MESSAGE_REACTION_REMOVE_ALL", "MESSAGE_REACTION_REMOVE_EMOJI":
-		reactionAdd, err := UnmarshalJSON[MessageReactionAdd](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal reaction add: %w", err)
 		}
 
-		ev = reactionAdd
-		// Do nothing.
+		ev = messageCreate
+	case "MESSAGE_UPDATE":
+		ev = MustUnmarshalJSON[MessageUpdate](*event.Data)
+	case "MESSAGE_DELETE":
+		ev = MustUnmarshalJSON[MessageDelete](*event.Data)
+	case "MESSAGE_DELETE_BULK":
+		ev = MustUnmarshalJSON[MessageDeleteBulk](*event.Data)
+	case "MESSAGE_REACTION_ADD":
+		ev = MustUnmarshalJSON[MessageReactionAdd](*event.Data)
+	case "MESSAGE_REACTION_REMOVE":
+		ev = MustUnmarshalJSON[MessageReactionRemove](*event.Data)
+	case "MESSAGE_REACTION_REMOVE_ALL":
+		ev = MustUnmarshalJSON[MessageReactionRemoveAll](*event.Data)
+	case "MESSAGE_REACTION_REMOVE_EMOJI":
+		ev = MustUnmarshalJSON[MessageReactionRemoveEmoji](*event.Data)
 	case "PRESENCE_UPDATE":
 		// Do nothing.
-	case "STAGE_INSTANCE_CREATE", "STAGE_INSTANCE_UPDATE", "STAGE_INSTANCE_DELETE":
+	case "STAGE_INSTANCE_CREATE":
+		ev = MustUnmarshalJSON[StageInstanceCreate](*event.Data)
+	case "STAGE_INSTANCE_UPDATE":
+		ev = MustUnmarshalJSON[StageInstanceUpdate](*event.Data)
+	case "STAGE_INSTANCE_DELETE":
+		ev = MustUnmarshalJSON[StageInstanceDelete](*event.Data)
 		// Do nothing.
 	case "TYPING_START":
+		ev = MustUnmarshalJSON[TypingStart](*event.Data)
 		// Do nothing.
 	case "USER_UPDATE":
-		userUpdate, err := UnmarshalJSON[UserUpdate](*event.Data)
-		if err != nil {
-			return fmt.Errorf("failed to unmarshal guild member update event: %w", err)
-		}
+		userUpdate := MustUnmarshalJSON[UserUpdate](*event.Data)
 
 		for _, f := range b.fetchersByGuild {
 			member, ok := f.membersByID[userUpdate.User.ID]
@@ -553,19 +634,20 @@ func (b *Bot) handleDispatch(event Event) error {
 			f.membersByID[userUpdate.User.ID] = member
 		}
 
-	case "VOICE_STATE_UPDATE", "VOICE_SERVER_UPDATE":
-		// Do nothing.
+		ev = userUpdate
+	case "VOICE_STATE_UPDATE":
+		ev = MustUnmarshalJSON[VoiceStateUpdate](*event.Data)
+	case "VOICE_SERVER_UPDATE":
+		ev = MustUnmarshalJSON[VoiceServerUpdate](*event.Data)
 	case "WEBHOOKS_UPDATE":
-		// Do nothing.
+		ev = MustUnmarshalJSON[WebhooksUpdate](*event.Data)
 	default:
 		slog.Warn("Unparsed dispatch event", "type", eventType)
 	}
 
-	fmt.Println(ev)
 	switch e := ev.(type) {
 	case guildEvent:
 		if eventHandler, ok := b.eventListeners[eventType]; ok {
-			fmt.Println()
 			fetcher, ok := b.fetchersByGuild[e.guild()]
 			if !ok {
 				return fmt.Errorf("no fetcher found for guild")
@@ -573,8 +655,6 @@ func (b *Bot) handleDispatch(event Event) error {
 
 			return eventHandler.run(fetcher, ev)
 		}
-	default:
-		fmt.Println("fail")
 	}
 
 	return nil
