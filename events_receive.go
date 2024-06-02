@@ -2,7 +2,6 @@ package godiscord
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 )
 
@@ -1154,7 +1153,6 @@ func (e messageReactionRemoveHandler) name() string {
 }
 
 func (e messageReactionRemoveHandler) run(fetcher *Fetcher, ev any) error {
-	fmt.Println("real type", reflect.TypeOf(ev))
 	return e.f(fetcher, ev.(MessageReactionRemove))
 }
 

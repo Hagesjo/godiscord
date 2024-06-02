@@ -102,7 +102,6 @@ func (c *restClient) do(method string, path string, reqStruct any, respStruct an
 		if err != nil {
 			return fmt.Errorf("failed to marshal request: %w", err)
 		}
-		fmt.Println(string(bs))
 
 		body = bytes.NewReader(bs)
 	}
@@ -120,7 +119,7 @@ func (c *restClient) do(method string, path string, reqStruct any, respStruct an
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	req.Header.Add("User-Agent", "DiscordBot (https://github.com/hagesjo/godiscord, 0.1.0)")
+	req.Header.Add("User-Agent", "DiscordBot (https://github.com/hagesjo/godiscord, dev)")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
