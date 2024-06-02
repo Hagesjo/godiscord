@@ -1,4 +1,4 @@
-package discordgo
+package godiscord
 
 const (
 	IntentGuilds                 = 1 << 0

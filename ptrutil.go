@@ -1,4 +1,4 @@
-package discordgo
+package godiscord
 
 func strPtr(s string) *string {
 	return &s

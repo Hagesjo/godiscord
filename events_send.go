@@ -1,4 +1,4 @@
-package discordgo
+package godiscord
 
 type Heartbeat struct {
 	OpCode       int  `json:"op"`

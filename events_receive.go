@@ -1,4 +1,4 @@
-package discordgo
+package godiscord
 
 import (
 	"fmt"

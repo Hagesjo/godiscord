@@ -1,9 +1,10 @@
-package discordgo
+package godiscord
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"net/url"
 )
@@ -93,6 +94,8 @@ func (c *restClient) do(method string, path string, reqStruct any, respStruct an
 		return fmt.Errorf("failed to build url: %w", err)
 	}
 
+	slog.Info("Making request.", "method", method, "path", path)
+
 	var body *bytes.Reader
 	if reqStruct != nil {
 		bs, err := json.Marshal(reqStruct)
@@ -116,6 +119,8 @@ func (c *restClient) do(method string, path string, reqStruct any, respStruct an
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
+
+	req.Header.Add("User-Agent", "DiscordBot (https://github.com/hagesjo/godiscord, 0.1.0)")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -190,8 +195,87 @@ type MessageCreateRequest struct {
 	Flags            int                 `json:"flags,omitempty"`             // Message flags combined as a bitfield (only SUPPRESS_EMBEDS and SUPPRESS_NOTIFICATIONS can be set)
 }
 
+// Do is for using any discord endpoint not implemented here.
+func (c *restClient) Do(path string, req any) error {
+	err := c.post(path, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *restClient) GetGuild(guildID string) error {
+	path := fmt.Sprintf("/guilds/%s", guildID)
+	var resp Guild
+	if err := c.get(path, &resp); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// TODO: ModifyGuild
+// TODO: GetGuildPreview
+// TODO: DeleteGuild
+
 func (c *restClient) MessageSend(channelID string, req MessageCreateRequest) error {
 	path := fmt.Sprintf("/channels/%s/messages", channelID)
+	err := c.post(path, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type CreateChannelRequest struct {
+	Name      *string     `json:"name,omitempty"`
+	Type      ChannelType `json:"type"`
+	Topic     *string     `json:"topic,omitempty"`
+	Bitrate   *int        `json:"bitrate,omitempty"`
+	UserLimit *int        `json:"user_limit,omitempty"`
+	// RateLimitPerUser also applies to thread creation. Users can send one message and create one thread during each rate_limit_per_user interval.
+	RateLimitPerUser     *int                  `json:"rate_limit_per_user,omitempty"`
+	Position             *int                  `json:"position,omitempty"`
+	PermissionOverwrites []PermissionOverwrite `json:"permission_overwrites,omitempty"`
+	// ParentID is the parent id of the channel.
+	// For guild channels: id of the parent category for a channel (each parent category can contain up to 50 channels).
+	// For threads: id of the text channel this thread was created.
+	ParentID                      *string             `json:"parent_id,omitempty"`
+	NSFW                          bool                `json:"nsfw"`
+	RTCRegion                     *string             `json:"rtc_region,omitempty"`
+	VideoQualityMode              *VideoQualityMode   `json:"video_quality_mode,omitempty"`
+	DefaultAutoArchiveDuration    *int                `json:"default_auto_archive_duration,omitempty"`
+	DefaultReactionEmoji          *DefaultReaction    `json:"default_reaction_emoji,omitempty"`
+	AvailableTags                 []ForumTag          `json:"available_tags,omitempty"`
+	DefaultSortOrder              *ChannelSortOrder   `json:"default_sort_order,omitempty"`
+	DefaultForumLayout            *ChannelForumLayout `json:"default_forum_layout,omitempty"`
+	DefaultThreadRateLimitPerUser *int                `json:"default_thread_rate_limit_per_user,omitempty"`
+}
+
+func (c *restClient) CreateChannel(guildID string, req CreateChannelRequest) error {
+	path := fmt.Sprintf("/guilds/%s/channels", guildID)
+	err := c.post(path, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+type ModifyChannelOrder struct {
+	ID              string  `json:"id"`               // snowflake
+	ChannelID       string  `json:"channel_id"`       // snowflake
+	Position        *int    `json:"position"`         // ?integer
+	LockPermissions *bool   `json:"lock_permissions"` // ?boolean
+	ParentID        *string `json:"parent_id"`        // ?snowflake
+}
+
+type ModifyChannelOrderRequest []ModifyChannelOrder
+
+func (c *restClient) ModifyChannelOrder(channelID string, req CreateChannelRequest) error {
+	path := fmt.Sprintf("/guilds/%s/channels", channelID)
 	err := c.post(path, req, nil)
 	if err != nil {
 		return err

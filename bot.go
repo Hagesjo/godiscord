@@ -1,4 +1,4 @@
-package discordgo
+package godiscord
 
 import (
 	"context"
@@ -93,6 +93,41 @@ func (b *Bot) RegisterEventListener(handler any) error {
 	b.eventListeners[eventHandler.name()] = eventHandler
 
 	return nil
+}
+
+func (b *Bot) ListGuilds() (guilds []Guild) {
+	for _, guild := range b.guilds {
+		guilds = append(guilds, guild)
+	}
+
+	return guilds
+}
+
+func (b *Bot) GetGuild(name string) (Guild, error) {
+	guild, ok := b.guilds[name]
+	if !ok {
+		return guild, fmt.Errorf("guild not found")
+	}
+
+	return guild, nil
+}
+
+func (b *Bot) GetVoiceStates(guildID string) ([]VoiceState, error) {
+	f, ok := b.fetchersByGuild[guildID]
+	if !ok {
+		return nil, fmt.Errorf("no such guild")
+	}
+
+	return f.GetVoiceStates(), nil
+}
+
+func (b *Bot) GetMembers(guildID string) ([]GuildMember, error) {
+	f, ok := b.fetchersByGuild[guildID]
+	if !ok {
+		return nil, fmt.Errorf("no such guild")
+	}
+
+	return f.GetMembers(), nil
 }
 
 func (b *Bot) Run() error {
@@ -322,7 +357,7 @@ func (b *Bot) handleDispatch(event Event) error {
 
 		ev = guildEvent
 	case "GUILD_UPDATE":
-		guildUpdate := MustUnmarshalJSON[GuildDelete](*event.Data)
+		guildUpdate := MustUnmarshalJSON[GuildUpdate](*event.Data)
 
 		b.guilds[guildUpdate.Guild.ID] = guildUpdate.Guild
 
@@ -636,7 +671,22 @@ func (b *Bot) handleDispatch(event Event) error {
 
 		ev = userUpdate
 	case "VOICE_STATE_UPDATE":
-		ev = MustUnmarshalJSON[VoiceStateUpdate](*event.Data)
+		voiceEvent := MustUnmarshalJSON[VoiceStateUpdate](*event.Data)
+		if voiceEvent.GuildID == nil {
+			break
+		}
+
+		fetcher, ok := b.fetchersByGuild[*voiceEvent.GuildID]
+		if !ok {
+			slog.Warn("VOICE_STATE_UPDATE received with a channel outside of a known guild", "guild", *voiceEvent.GuildID)
+		}
+
+		if voiceEvent.ChannelID == nil {
+			delete(fetcher.voiceStatesByID, voiceEvent.UserID)
+		} else {
+			fetcher.voiceStatesByID[voiceEvent.UserID] = voiceEvent.VoiceState
+		}
+
 	case "VOICE_SERVER_UPDATE":
 		ev = MustUnmarshalJSON[VoiceServerUpdate](*event.Data)
 	case "WEBHOOKS_UPDATE":
@@ -674,7 +724,7 @@ func (b *Bot) identify() error {
 			Properties: Properties{
 				OS:      "raspbian",
 				Browser: "webgockets",
-				Device:  "discordgo",
+				Device:  "godiscord",
 			},
 			Presence: &Presence{
 				Activities: []*Activity{

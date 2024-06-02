@@ -1,4 +1,4 @@
-module github.com/hagesjo/discordgo
+module github.com/hagesjo/godiscord
 
 go 1.21.3
 

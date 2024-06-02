@@ -1,1 +1,1 @@
-package discordgo
+package godiscord
