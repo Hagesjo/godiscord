@@ -600,6 +600,7 @@ type User struct {
 	Flags         int    `json:"flags"`
 	PremiumType   int    `json:"premium_type"`
 	PublicFlags   int    `json:"public_flags"`
+	GlobalName    string `json:"global_name"`
 }
 
 type Activity struct {

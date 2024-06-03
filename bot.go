@@ -85,6 +85,10 @@ func (b *Bot) RegisterTextCommand(command string, handler TextCommandFunc) error
 	return nil
 }
 
+// RegisterEventListener registers an event listener.
+// Handler must be in the form of func(*Fetcher, <GuildEvent>) error {}.
+// Might need a refactor or another look to try get rid of the `any` and have a generic function signature.
+// Not entirely sure how yet though.
 func (b *Bot) RegisterEventListener(handler any) error {
 	eventHandler, err := eventHandlerFromInterface(handler)
 	if err != nil {
@@ -103,8 +107,8 @@ func (b *Bot) ListGuilds() (guilds []Guild) {
 	return guilds
 }
 
-func (b *Bot) GetGuild(name string) (Guild, error) {
-	guild, ok := b.guilds[name]
+func (b *Bot) GetGuild(id string) (Guild, error) {
+	guild, ok := b.guilds[id]
 	if !ok {
 		return guild, fmt.Errorf("guild not found")
 	}
@@ -121,6 +125,15 @@ func (b *Bot) GetVoiceStates(guildID string) ([]VoiceState, error) {
 	return f.GetVoiceStates(), nil
 }
 
+func (b *Bot) GetChannelsByIDs(guildID string, channelIDs ...string) ([]Channel, error) {
+	f, ok := b.fetchersByGuild[guildID]
+	if !ok {
+		return nil, fmt.Errorf("no such guild")
+	}
+
+	return f.GetChannelsByIDs(channelIDs...), nil
+}
+
 func (b *Bot) GetMembers(guildID string) ([]GuildMember, error) {
 	f, ok := b.fetchersByGuild[guildID]
 	if !ok {
@@ -128,6 +141,15 @@ func (b *Bot) GetMembers(guildID string) ([]GuildMember, error) {
 	}
 
 	return f.GetMembers(), nil
+}
+
+func (b *Bot) GetMembersByIDs(guildID string, memberIDs ...string) ([]GuildMember, error) {
+	f, ok := b.fetchersByGuild[guildID]
+	if !ok {
+		return nil, fmt.Errorf("no such guild")
+	}
+
+	return f.GetMembersByIDs(memberIDs...), nil
 }
 
 func (b *Bot) Run() error {
@@ -166,6 +188,7 @@ func (b *Bot) Run() error {
 
 // handler is the main listening loop for the bot, blocking until a disconnect happens.
 // The returned bool describes if a reconnect is possible or not.
+// TODO: Should be made context aware from args.
 func (b *Bot) handler(isResuming bool) (bool, error) {
 	heartbeatCtx, cancelHeartbeatCtx := context.WithCancel(context.Background())
 	defer cancelHeartbeatCtx()
@@ -198,7 +221,7 @@ func (b *Bot) handler(isResuming bool) (bool, error) {
 				return false, fmt.Errorf("failed to handle dispatch event: %w", err)
 			}
 		case OpCodeResume:
-			// Do nothing for now
+			// Do nothing for now.
 		case OpCodeReconnect:
 			return true, nil
 		case OpCodeInvalidSession:
@@ -720,7 +743,6 @@ func (b *Bot) identify() error {
 				IntentGuildPresences | IntentGuildMessages | IntentGuildMessageReactions | IntentGuildMessageTyping |
 				IntentDirectMessages | IntentDirectMessageReactions | IntentDirectMessageTyping | IntentMessageContent |
 				IntentGuildScheduledEvents | IntentAutoModerationConfiguration | IntentAutoModerationExecution,
-			// Intents: IntentGuilds | IntentGuildMessages | IntentDirectMessages,
 			Properties: Properties{
 				OS:      "raspbian",
 				Browser: "webgockets",
@@ -731,7 +753,7 @@ func (b *Bot) identify() error {
 					{
 						Name: "developing simulator or something",
 						Type: ActivityGame,
-						URL:  "https://github.com/Hagesjo/webgockets",
+						URL:  "https://github.com/Hagesjo/godiscord",
 					},
 				},
 				Status: UserStatusOnline,

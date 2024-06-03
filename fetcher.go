@@ -11,12 +11,24 @@ func newFetcher(guildEvent GuildCreate, restClient *restClient) *Fetcher {
 		voiceStatesByID: make(map[string]VoiceState),
 		restClient:      restClient,
 	}
+
+	for _, voiceState := range guildEvent.VoiceStates {
+		fetcher.voiceStatesByID[voiceState.UserID] = voiceState
+	}
+
 	for _, member := range guildEvent.Members {
+		member := member
 		if member.User == nil {
 			continue
 		}
 
 		fetcher.membersByID[member.User.ID] = member
+		// Discord does not provide member in voice states for GUILD_CREATE for whatever reason.
+		// So we fill it from received members.
+		if voiceState, ok := fetcher.voiceStatesByID[member.User.ID]; ok {
+			voiceState.Member = &member
+			fetcher.voiceStatesByID[member.User.ID] = voiceState
+		}
 	}
 
 	for _, channel := range guildEvent.Channels {
@@ -25,10 +37,6 @@ func newFetcher(guildEvent GuildCreate, restClient *restClient) *Fetcher {
 
 	for _, thread := range guildEvent.Threads {
 		fetcher.threadsByID[thread.ID] = thread
-	}
-
-	for _, voiceState := range guildEvent.VoiceStates {
-		fetcher.voiceStatesByID[voiceState.UserID] = voiceState
 	}
 
 	return &fetcher
