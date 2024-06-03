@@ -86,8 +86,7 @@ func (c *restClient) post(path string, req, resp any) error {
 	return c.do(http.MethodPost, path, req, resp)
 }
 
-// do is a helper function for doing a get request.
-// The jsonResp sent in should be a pointer to the json struct.
+// do is a helper function for doing a request.
 func (c *restClient) do(method string, path string, reqStruct any, respStruct any) error {
 	u, err := url.JoinPath(c.baseURL, path)
 	if err != nil {
@@ -194,16 +193,6 @@ type MessageCreateRequest struct {
 	Flags            int                 `json:"flags,omitempty"`             // Message flags combined as a bitfield (only SUPPRESS_EMBEDS and SUPPRESS_NOTIFICATIONS can be set)
 }
 
-// Do is for using any discord endpoint not implemented here.
-func (c *restClient) Do(path string, req any) error {
-	err := c.post(path, req, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (c *restClient) GetGuild(guildID string) error {
 	path := fmt.Sprintf("/guilds/%s", guildID)
 	var resp Guild
@@ -217,6 +206,7 @@ func (c *restClient) GetGuild(guildID string) error {
 // TODO: ModifyGuild
 // TODO: GetGuildPreview
 // TODO: DeleteGuild
+// TODO: loooooads more.
 
 func (c *restClient) MessageSend(channelID string, req MessageCreateRequest) error {
 	path := fmt.Sprintf("/channels/%s/messages", channelID)

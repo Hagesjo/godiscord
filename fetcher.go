@@ -57,6 +57,10 @@ func (f *Fetcher) Send(channelID, content string) error {
 	})
 }
 
+func (f *Fetcher) Do(path, method string, res any, resp any) error {
+	return f.restClient.do(path, method, res, resp)
+}
+
 func (f *Fetcher) CreateChannel(req CreateChannelRequest) error {
 	return f.restClient.CreateChannel(f.guildID, req)
 }
