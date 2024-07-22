@@ -618,7 +618,7 @@ type Activity struct {
 	Secrets       Secrets      `json:"secrets"`
 	Instance      bool         `json:"instance"`
 	Flags         int          `json:"flags"`
-	Buttons       []Button     `json:"buttons"`
+	Buttons       []string     `json:"buttons"`
 }
 
 type ActivityType uint32
