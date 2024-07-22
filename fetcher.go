@@ -51,9 +51,15 @@ type Fetcher struct {
 	restClient      *restClient
 }
 
-func (f *Fetcher) Send(channelID, content string) error {
+func (f *Fetcher) SendContent(channelID, content string) error {
 	return f.restClient.MessageSend(channelID, MessageCreateRequest{
 		Content: content,
+	})
+}
+
+func (f *Fetcher) SendEmbeds(channelID string, embeds []Embed) error {
+	return f.restClient.MessageSend(channelID, MessageCreateRequest{
+		Embeds: embeds,
 	})
 }
 
