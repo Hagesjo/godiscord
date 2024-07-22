@@ -94,8 +94,26 @@ func (f *Fetcher) GetChannels() []Channel {
 	return Values(f.channelsByID)
 }
 
-func (f *Fetcher) GetChannelsByIDs(userIDs ...string) (channels []Channel) {
-	for _, id := range userIDs {
+func (f *Fetcher) GetChannelByID(channelID string) (Channel, bool) {
+	c, ok := f.channelsByID[channelID]
+	return c, ok
+}
+
+func (f *Fetcher) GetChannelByName(name string) (Channel, bool) {
+	// TODO: inefficient. If it becomes a problem, save channels by name as well in a dict (and update it on received event).
+	cs :=  Filter(f.GetChannels(), func(channel Channel) bool {
+		return channel.Name != nil && *channel.Name == name
+	})
+
+	if len(cs) == 0 {
+		return Channel{}, false
+	}
+
+	return cs[0], true
+}
+
+func (f *Fetcher) GetChannelsByIDs(channelIDs ...string) (channels []Channel) {
+	for _, id := range channelIDs {
 		channel, ok := f.channelsByID[id]
 		if ok {
 			channels = append(channels, channel)
