@@ -8,7 +8,7 @@ import (
 
 var ErrInvalidJSON = errors.New("invalid json")
 
-// ReadJSON is a convenience function to unmarshal a client read into a json struct.
+// UnmarshalJSON is a convenience function to unmarshal a client read into a json struct.
 // Ideally, this should be a method to the client, but due to go limitations with generic methods, we can't do that for now.
 func UnmarshalJSON[T any](data json.RawMessage) (T, error) {
 	var ret T

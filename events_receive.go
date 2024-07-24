@@ -213,7 +213,7 @@ func (e channelPinsUpdateHandler) run(fetcher *Fetcher, ev any) error {
 
 // ThreadCreate is received when a thread is created.
 type ThreadCreate struct {
-	Channel Channel `json:"channel"`
+	Channel
 }
 
 func (m ThreadCreate) guild() string {
@@ -238,7 +238,7 @@ func (e threadCreateHandler) run(fetcher *Fetcher, ev any) error {
 
 // ThreadUpdate is received when a thread is updated.
 type ThreadUpdate struct {
-	Channel Channel `json:"channel"`
+	Channel
 }
 
 func (m ThreadUpdate) guild() string {
@@ -263,7 +263,7 @@ func (e threadUpdateHandler) run(fetcher *Fetcher, ev any) error {
 
 // ThreadDelete is received when a thread is deleted.
 type ThreadDelete struct {
-	Channel Channel `json:"channel"`
+	Channel
 }
 
 func (m ThreadDelete) guild() string {

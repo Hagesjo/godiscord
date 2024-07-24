@@ -193,6 +193,12 @@ type MessageCreateRequest struct {
 	Flags            int                 `json:"flags,omitempty"`             // Message flags combined as a bitfield (only SUPPRESS_EMBEDS and SUPPRESS_NOTIFICATIONS can be set)
 }
 
+type MessageCreateResponse struct {
+	// There's more fields here, but only need ID for now.
+
+	ID string `json:"id,omitempty"`
+}
+
 func (c *restClient) GetGuild(guildID string) error {
 	path := fmt.Sprintf("/guilds/%s", guildID)
 	var resp Guild
@@ -208,14 +214,15 @@ func (c *restClient) GetGuild(guildID string) error {
 // TODO: DeleteGuild
 // TODO: loooooads more.
 
-func (c *restClient) MessageSend(channelID string, req MessageCreateRequest) error {
+func (c *restClient) MessageSend(channelID string, req MessageCreateRequest) (*MessageCreateResponse, error) {
 	path := fmt.Sprintf("/channels/%s/messages", channelID)
-	err := c.post(path, req, nil)
+	resp := &MessageCreateResponse{}
+	err := c.post(path, req, resp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resp, nil
 }
 
 type CreateThreadRequest struct {
@@ -231,14 +238,21 @@ type CreateThreadRequest struct {
 	RateLimitPerUser *int `json:"rate_limit_per_user,omitempty" validate:"omitempty,min=0,max=21600"`
 }
 
-func (c *restClient) CreateThread(channelID, messageID string, req CreateThreadRequest) error {
+type CreateThreadResponse struct {
+	// There's more fields here, but only need ID for now.
+
+	ID string `json:"id,omitempty"`
+}
+
+func (c *restClient) CreateThread(channelID, messageID string, req CreateThreadRequest) (*CreateThreadResponse, error) {
 	path := fmt.Sprintf("/channels/%s/messages/%s/threads", channelID, messageID)
-	err := c.post(path, req, nil)
+	resp := &CreateThreadResponse{}
+	err := c.post(path, req, resp)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return resp, nil
 }
 
 type CreateChannelRequest struct {

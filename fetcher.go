@@ -51,19 +51,19 @@ type Fetcher struct {
 	restClient      *restClient
 }
 
-func (f *Fetcher) SendContent(channelID, content string) error {
+func (f *Fetcher) SendContent(channelID, content string) (*MessageCreateResponse, error) {
 	return f.restClient.MessageSend(channelID, MessageCreateRequest{
 		Content: content,
 	})
 }
 
-func (f *Fetcher) SendEmbeds(channelID string, embeds []Embed) error {
+func (f *Fetcher) SendEmbeds(channelID string, embeds []Embed) (*MessageCreateResponse, error) {
 	return f.restClient.MessageSend(channelID, MessageCreateRequest{
 		Embeds: embeds,
 	})
 }
 
-func (f *Fetcher) CreateThread(channelID, messageID string, req CreateThreadRequest) error {
+func (f *Fetcher) CreateThread(channelID, messageID string, req CreateThreadRequest) (*CreateThreadResponse, error) {
 	return f.restClient.CreateThread(channelID, messageID, req)
 }
 
@@ -100,6 +100,13 @@ func (f *Fetcher) GetChannels() []Channel {
 
 func (f *Fetcher) GetChannelByID(channelID string) (Channel, bool) {
 	c, ok := f.channelsByID[channelID]
+	return c, ok
+}
+
+// TODO: Might want to just merge channels and threads, as they are the same type anyway.
+
+func (f *Fetcher) GetThreadByID(threadID string) (Channel, bool) {
+	c, ok := f.threadsByID[threadID]
 	return c, ok
 }
 
