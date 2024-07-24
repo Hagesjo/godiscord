@@ -16,21 +16,21 @@ type Hello struct {
 
 // Ready represents the ready event dispatched when a client has completed the initial handshake with the gateway.
 type Ready struct {
-	APIVersion       int         `json:"v"`                  // API version
-	User             User        `json:"user"`               // Information about the user including email
-	Guilds           []Guild     `json:"guilds"`             // Guilds the user is in
-	SessionID        string      `json:"session_id"`         // Used for resuming connections
-	ResumeGatewayURL string      `json:"resume_gateway_url"` // Gateway URL for resuming connections
-	Shard            []int       `json:"shard,omitempty"`    // Shard information associated with this session, if sent when identifying
-	Application      Application `json:"application"`        // Contains id and flags
+	APIVersion       int         `json:"v"`                  // API version.
+	User             User        `json:"user"`               // Information about the user including email.
+	Guilds           []Guild     `json:"guilds"`             // Guilds the user is in.
+	SessionID        string      `json:"session_id"`         // Used for resuming connections.
+	ResumeGatewayURL string      `json:"resume_gateway_url"` // Gateway URL for resuming connections.
+	Shard            []int       `json:"shard,omitempty"`    // Shard information associated with this session, if sent when identifying.
+	Application      Application `json:"application"`        // Contains id and flags.
 }
 
 // ApplicationCommandPermissionsUpdate represents the permissions for an application's command(s) in a guild.
 type ApplicationCommandPermissionsUpdate struct {
-	ID            string                          `json:"id"`             // ID of the command or the application ID
-	ApplicationID string                          `json:"application_id"` // ID of the application the command belongs to
-	GuildID       string                          `json:"guild_id"`       // ID of the guild
-	Permissions   []ApplicationCommandPermissions `json:"permissions"`    // Permissions for the command in the guild, max of 100
+	ID            string                          `json:"id"`             // ID of the command or the application ID.
+	ApplicationID string                          `json:"application_id"` // ID of the application the command belongs to.
+	GuildID       string                          `json:"guild_id"`       // ID of the guild.
+	Permissions   []ApplicationCommandPermissions `json:"permissions"`    // Permissions for the command in the guild, max of 100.
 }
 
 func (m ApplicationCommandPermissionsUpdate) guild() string {
@@ -190,8 +190,8 @@ func (e channelDeleteHandler) run(fetcher *Fetcher, ev any) error {
 // ChannelPinsUpdate is sent when a message is pinned or unpinned in a text channel.
 // This is not sent when a pinned message is deleted.
 type ChannelPinsUpdate struct {
-	GuildID          string     `json:"guild_id,omitempty"`           // ID of the guild
-	ChannelID        string     `json:"channel_id"`                   // ID of the channel
+	GuildID          string     `json:"guild_id,omitempty"`           // ID of the guild.
+	ChannelID        string     `json:"channel_id"`                   // ID of the channel.
 	LastPinTimestamp *time.Time `json:"last_pin_timestamp,omitempty"` // Time at which the most recent pinned message was pinned. If nil means that the message was unpinned.
 }
 
@@ -288,10 +288,10 @@ func (e threadDeleteHandler) run(fetcher *Fetcher, ev any) error {
 
 // ThreadListSync is received when gaining access to a channel, contains all active threads in that channel.
 type ThreadListSync struct {
-	GuildID    string         `json:"guild_id"`              // ID of the guild
-	ChannelIDs []string       `json:"channel_ids,omitempty"` // Parent channel IDs whose threads are being synced
-	Threads    []Channel      `json:"threads"`               // All active threads in the given channels that the current user can access
-	Members    []ThreadMember `json:"members"`               // All thread member objects from the synced threads for the current user
+	GuildID    string         `json:"guild_id"`              // ID of the guild.
+	ChannelIDs []string       `json:"channel_ids,omitempty"` // Parent channel IDs whose threads are being synced.
+	Threads    []Channel      `json:"threads"`               // All active threads in the given channels that the current user can access.
+	Members    []ThreadMember `json:"members"`               // All thread member objects from the synced threads for the current user.
 }
 
 func (m ThreadListSync) guild() string {
@@ -314,7 +314,7 @@ func (e threadListSyncHandler) run(fetcher *Fetcher, ev any) error {
 type ThreadMemberUpdate struct {
 	ThreadMember
 
-	GuildID string `json:"guild_id"` // ID of the guild
+	GuildID string `json:"guild_id"` // ID of the guild.
 }
 
 func (m ThreadMemberUpdate) guild() string {
@@ -335,11 +335,11 @@ func (e threadMemberUpdateHandler) run(fetcher *Fetcher, ev any) error {
 
 // ThreadMembersUpdate is received when some user(s) were added to or removed from a thread.
 type ThreadMembersUpdate struct {
-	ID               string         `json:"id"`                           // ID of the thread
-	GuildID          string         `json:"guild_id"`                     // ID of the guild
-	MemberCount      int            `json:"member_count"`                 // Approximate number of members in the thread, capped at 50
-	AddedMembers     []ThreadMember `json:"added_members,omitempty"`      // Users who were added to the thread
-	RemovedMemberIDs []string       `json:"removed_member_ids,omitempty"` // ID of the users who were removed from the thread
+	ID               string         `json:"id"`                           // ID of the thread.
+	GuildID          string         `json:"guild_id"`                     // ID of the guild.
+	MemberCount      int            `json:"member_count"`                 // Approximate number of members in the thread, capped at 50.
+	AddedMembers     []ThreadMember `json:"added_members,omitempty"`      // Users who were added to the thread.
+	RemovedMemberIDs []string       `json:"removed_member_ids,omitempty"` // ID of the users who were removed from the thread.
 }
 
 func (m ThreadMembersUpdate) guild() string {
@@ -439,17 +439,17 @@ func (e entitlementDeleteHandler) run(fetcher *Fetcher, ev any) error {
 // members and presences returned in this event will only contain your bot and users in voice channels.
 type GuildCreate struct {
 	Guild
-	JoinedAt             time.Time             `json:"joined_at"`              // When this guild was joined at
+	JoinedAt             time.Time             `json:"joined_at"`              // When this guild was joined at.
 	Large                bool                  `json:"large"`                  // true if this is considered a large guild
 	Unavailable          *bool                 `json:"unavailable,omitempty"`  // true if this guild is unavailable due to an outage
-	MemberCount          int                   `json:"member_count"`           // Total number of members in this guild
-	VoiceStates          []VoiceState          `json:"voice_states"`           // States of members currently in voice channels; lacks the guild_id key
-	Members              []GuildMember         `json:"members"`                // Users in the guild
-	Channels             []Channel             `json:"channels"`               // Channels in the guild
-	Threads              []Channel             `json:"threads"`                // All active threads in the guild that current user has permission to view
-	Presences            []Presence            `json:"presences"`              // Presences of the members in the guild, will only include non-offline members if the size is greater than large threshold
-	StageInstances       []StageInstance       `json:"stage_instances"`        // Stage instances in the guild
-	GuildScheduledEvents []GuildScheduledEvent `json:"guild_scheduled_events"` // Scheduled events in the guild
+	MemberCount          int                   `json:"member_count"`           // Total number of members in this guild.
+	VoiceStates          []VoiceState          `json:"voice_states"`           // States of members currently in voice channels; lacks the guild_id key.
+	Members              []GuildMember         `json:"members"`                // Users in the guild.
+	Channels             []Channel             `json:"channels"`               // Channels in the guild.
+	Threads              []Channel             `json:"threads"`                // All active threads in the guild that current user has permission to view.
+	Presences            []Presence            `json:"presences"`              // Presences of the members in the guild, will only include non-offline members if the size is greater than large threshold.
+	StageInstances       []StageInstance       `json:"stage_instances"`        // Stage instances in the guild.
+	GuildScheduledEvents []GuildScheduledEvent `json:"guild_scheduled_events"` // Scheduled events in the guild.
 }
 
 func (m GuildCreate) guild() string {
@@ -556,8 +556,8 @@ func (e guildBanRemoveHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildEmojisUpdate is received when guild emojis were updated
 type GuildEmojisUpdate struct {
-	GuildID string  `json:"guild_id"` // ID of the guild
-	Emojis  []Emoji `json:"emojis"`   // Array of emojis
+	GuildID string  `json:"guild_id"` // ID of the guild.
+	Emojis  []Emoji `json:"emojis"`   // Array of emojis.
 }
 
 func (m GuildEmojisUpdate) guild() string {
@@ -623,17 +623,17 @@ func (e guildMemberAddHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildMemberUpdate is received when a guild member was updated.
 type GuildMemberUpdate struct {
-	GuildID                    string     `json:"guild_id"`                     // ID of the guild
-	Roles                      []string   `json:"roles"`                        // User role ids
-	User                       User       `json:"user"`                         // User
-	Nick                       *string    `json:"nick,omitempty"`               // Nickname of the user in the guild
-	Avatar                     *string    `json:"avatar,omitempty"`             // Member's guild avatar hash
-	JoinedAt                   *time.Time `json:"joined_at,omitempty"`          // When the user joined the guild
-	PremiumSince               *time.Time `json:"premium_since,omitempty"`      // When the user starting boosting the guild
-	Deaf                       *bool      `json:"deaf"`                         // Whether the user is deafened in voice channels
-	Mute                       *bool      `json:"mute"`                         // Whether the user is muted in voice channels
-	Pending                    *bool      `json:"pending"`                      // Whether the user has not yet passed the guild's Membership Screening requirements
-	CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"` // When the user's timeout will expire and the user will be able to communicate in the guild again, null or a time in the past if the user is not timed out
+	GuildID                    string     `json:"guild_id"`                     // ID of the guild.
+	Roles                      []string   `json:"roles"`                        // User role ids.
+	User                       User       `json:"user"`                         // User.
+	Nick                       *string    `json:"nick,omitempty"`               // Nickname of the user in the guild.
+	Avatar                     *string    `json:"avatar,omitempty"`             // Member's guild avatar hash.
+	JoinedAt                   *time.Time `json:"joined_at,omitempty"`          // When the user joined the guild.
+	PremiumSince               *time.Time `json:"premium_since,omitempty"`      // When the user starting boosting the guild.
+	Deaf                       *bool      `json:"deaf"`                         // Whether the user is deafened in voice channels.
+	Mute                       *bool      `json:"mute"`                         // Whether the user is muted in voice channels.
+	Pending                    *bool      `json:"pending"`                      // Whether the user has not yet passed the guild's Membership Screening requirements.
+	CommunicationDisabledUntil *time.Time `json:"communication_disabled_until"` // When the user's timeout will expire and the user will be able to communicate in the guild again, null or a time in the past if the user is not timed out.
 }
 
 func (m GuildMemberUpdate) guild() string {
@@ -654,8 +654,8 @@ func (e guildMemberUpdateHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildMemberRemove is received when a user was removed from the guild.
 type GuildMemberRemove struct {
-	GuildID string `json:"guild_id"` // ID of the guild
-	User    User   `json:"user"`     // User who was removed
+	GuildID string `json:"guild_id"` // ID of the guild.
+	User    User   `json:"user"`     // User who was removed.
 }
 
 func (m GuildMemberRemove) guild() string {
@@ -676,13 +676,13 @@ func (e guildMemberRemoveHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildMembersChunk is received in response to Guild Request Members. You can use the chunk_index and chunk_count to calculate how many chunks are left for your request.
 type GuildMembersChunk struct {
-	GuildID    string        `json:"guild_id"`            // ID of the guild
-	Members    []GuildMember `json:"members"`             // Set of guild members
-	ChunkIndex int           `json:"chunk_index"`         // Chunk index in the expected chunks for this response (0 <= chunk_index < chunk_count)
-	ChunkCount int           `json:"chunk_count"`         // Total number of expected chunks for this response
-	NotFound   []string      `json:"not_found,omitempty"` // When passing an invalid ID to REQUEST_GUILD_MEMBERS, it will be returned here
-	Presences  []Presence    `json:"presences,omitempty"` // When passing true to REQUEST_GUILD_MEMBERS, presences of the returned members will be here
-	Nonce      string        `json:"nonce,omitempty"`     // Nonce used in the Guild Members Request
+	GuildID    string        `json:"guild_id"`            // ID of the guild.
+	Members    []GuildMember `json:"members"`             // Set of guild members.
+	ChunkIndex int           `json:"chunk_index"`         // Chunk index in the expected chunks for this response (0 <= chunk_index < chunk_count).
+	ChunkCount int           `json:"chunk_count"`         // Total number of expected chunks for this response.
+	NotFound   []string      `json:"not_found,omitempty"` // When passing an invalid ID to REQUEST_GUILD_MEMBERS, it will be returned here.
+	Presences  []Presence    `json:"presences,omitempty"` // When passing true to REQUEST_GUILD_MEMBERS, presences of the returned members will be here.
+	Nonce      string        `json:"nonce,omitempty"`     // Nonce used in the Guild Members Request.
 }
 
 func (m GuildMembersChunk) guild() string {
@@ -703,8 +703,8 @@ func (e guildMembersChunkHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildRoleCreate is received when a new role was created.
 type GuildRoleCreate struct {
-	GuildID string `json:"guild_id"` // ID of the guild
-	Role    Role   `json:"role"`     // Role that was created
+	GuildID string `json:"guild_id"` // ID of the guild.
+	Role    Role   `json:"role"`     // Role that was created.
 }
 
 func (m GuildRoleCreate) guild() string {
@@ -725,8 +725,8 @@ func (e guildRoleCreateHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildRoleUpdate is received when a role was updated.
 type GuildRoleUpdate struct {
-	GuildID string `json:"guild_id"` // ID of the guild
-	Role    Role   `json:"role"`     // Role that was updated
+	GuildID string `json:"guild_id"` // ID of the guild.
+	Role    Role   `json:"role"`     // Role that was updated.
 }
 
 func (m GuildRoleUpdate) guild() string {
@@ -747,8 +747,8 @@ func (e guildRoleUpdateHandler) run(fetcher *Fetcher, ev any) error {
 
 // GuildRoleDelete is received when a role was deleted.
 type GuildRoleDelete struct {
-	GuildID string `json:"guild_id"` // ID of the guild
-	RoleID  string `json:"role_id"`  // ID of the role
+	GuildID string `json:"guild_id"` // ID of the guild.
+	RoleID  string `json:"role_id"`  // ID of the role.
 }
 
 func (m GuildRoleDelete) guild() string {
@@ -1205,11 +1205,11 @@ func (e messageReactionRemoveEmojiHandler) run(fetcher *Fetcher, ev any) error {
 
 // PresenceUpdate is sent when a user's presence in a guild is updated.
 type PresenceUpdate struct {
-	User         User         `json:"user"`          // User whose presence is being updated
-	GuildID      string       `json:"guild_id"`      // ID of the guild
-	Status       string       `json:"status"`        // Either "idle", "dnd", "online", or "offline"
-	Activities   []Activity   `json:"activities"`    // User's current activities
-	ClientStatus ClientStatus `json:"client_status"` // User's platform-dependent status
+	User         User         `json:"user"`          // User whose presence is being updated.
+	GuildID      string       `json:"guild_id"`      // ID of the guild.
+	Status       string       `json:"status"`        // Either "idle", "dnd", "online", or "offline".
+	Activities   []Activity   `json:"activities"`    // User's current activities.
+	ClientStatus ClientStatus `json:"client_status"` // User's platform-dependent status.
 }
 
 func (m PresenceUpdate) guild() string {
@@ -1293,11 +1293,11 @@ func (e stageInstanceDeleteHandler) run(fetcher *Fetcher, ev any) error {
 
 // TypingStart is received when a user starts typing in a channel.
 type TypingStart struct {
-	ChannelID string       `json:"channel_id"`         // ID of the channel
+	ChannelID string       `json:"channel_id"`         // ID of the channel.
 	GuildID   *string      `json:"guild_id,omitempty"` // ID of the guild.
-	UserID    string       `json:"user_id"`            // ID of the user
-	Timestamp int          `json:"timestamp"`          // Unix time (in seconds) of when the user started typing
-	Member    *GuildMember `json:"member,omitempty"`   // Member who started typing if this happened in a guild
+	UserID    string       `json:"user_id"`            // ID of the user.
+	Timestamp int          `json:"timestamp"`          // Unix time (in seconds) of when the user started typing.
+	Member    *GuildMember `json:"member,omitempty"`   // Member who started typing if this happened in a guild.
 }
 
 func (m TypingStart) guild() string {
@@ -1369,9 +1369,9 @@ func (e voiceStateUpdateHandler) run(fetcher *Fetcher, ev any) error {
 // VoiceServerUpdate is received when a guild's voice server is updated. This is sent when initially connecting to voice, and when the current voice instance fails over to a new server.
 // A null endpoint means that the voice server allocated has gone away and is trying to be reallocated. You should attempt to disconnect from the currently connected voice server, and not attempt to reconnect until a new voice server is allocated.
 type VoiceServerUpdate struct {
-	Token    string  `json:"token"`              // Voice connection token
-	GuildID  string  `json:"guild_id"`           // Guild this voice server update is for
-	Endpoint *string `json:"endpoint,omitempty"` // Voice server host
+	Token    string  `json:"token"`              // Voice connection token.
+	GuildID  string  `json:"guild_id"`           // Guild this voice server update is for.
+	Endpoint *string `json:"endpoint,omitempty"` // Voice server host.
 }
 
 func (m VoiceServerUpdate) guild() string {
@@ -1392,8 +1392,8 @@ func (e voiceServerUpdateHandler) run(fetcher *Fetcher, ev any) error {
 
 // WebhooksUpdate is received when a guild channel's webhook is created, updated, or deleted.
 type WebhooksUpdate struct {
-	GuildID   string `json:"guild_id"`   // ID of the guild
-	ChannelID string `json:"channel_id"` // ID of the channel
+	GuildID   string `json:"guild_id"`   // ID of the guild.
+	ChannelID string `json:"channel_id"` // ID of the channel.
 }
 
 func (m WebhooksUpdate) guild() string {

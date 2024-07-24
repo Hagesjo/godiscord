@@ -47,8 +47,10 @@ func NewBot(token, prefix string) (*Bot, error) {
 	}, nil
 }
 
-type TextCommandFunc func(*Fetcher, []string, Channel) error
-type EventListenFunc func(*Fetcher, DispatchEvent) error
+type (
+	TextCommandFunc func(*Fetcher, []string, Channel) error
+	EventListenFunc func(*Fetcher, DispatchEvent) error
+)
 
 type Bot struct {
 	wsClient   *webgockets.Client
@@ -94,6 +96,7 @@ func (b *Bot) RegisterEventListener(handler any) error {
 	if err != nil {
 		return fmt.Errorf("failed to register event: %w", err)
 	}
+
 	b.eventListeners[eventHandler.name()] = eventHandler
 
 	return nil
@@ -465,7 +468,7 @@ func (b *Bot) handleDispatch(event Event) error {
 	case "THREAD_MEMBER_UPDATE":
 		ev = MustUnmarshalJSON[ThreadMemberUpdate](*event.Data)
 	case "GUILD_AUDIT_LOG_ENTRY_CREATE":
-		// Do nothing
+		// Do nothing.
 	case "GUILD_EMOJIS_UPDATE":
 		emojisUpdate := MustUnmarshalJSON[GuildEmojisUpdate](*event.Data)
 
@@ -647,7 +650,6 @@ func (b *Bot) handleDispatch(event Event) error {
 				channel := fetcher.channelsByID[messageCreate.ChannelID]
 
 				if err := command(fetcher, s[1:], channel); err != nil {
-
 				}
 			}
 		}

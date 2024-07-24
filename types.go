@@ -63,7 +63,7 @@ type Guild struct {
 type VerificationLevel uint32
 
 const (
-	// VerificationLevelNone is unrestricted
+	// VerificationLevelNone is unrestricted.
 	VerificationLevelNone VerificationLevel = iota
 	// VerificationLevelLow enforces that users must have verified email on account.
 	VerificationLevelLow
@@ -195,7 +195,7 @@ const (
 	// GuildFeatureRoleSubscriptionsEnabled indicates that the guild has enabled role subscriptions.
 	GuildFeatureRoleSubscriptionsEnabled GuildFeature = "ROLE_SUBSCRIPTIONS_ENABLED"
 
-	// GuildFeatureTicketedEventsEnabled indicates that the guild has enabled ticketed events
+	// GuildFeatureTicketedEventsEnabled indicates that the guild has enabled ticketed events.
 	GuildFeatureTicketedEventsEnabled GuildFeature = "TICKETED_EVENTS_ENABLED"
 
 	// GuildFeatureVanityURL indicates that the guild has access to set a vanity URL.
@@ -282,19 +282,19 @@ type Emoji struct {
 
 // VoiceState represents a user's voice connection status.
 type VoiceState struct {
-	GuildID                 *string      `json:"guild_id,omitempty"`                   // The guild id this voice state is for
-	ChannelID               *string      `json:"channel_id,omitempty"`                 // The channel id this user is connected to
-	UserID                  string       `json:"user_id"`                              // The user id this voice state is for
-	Member                  *GuildMember `json:"member,omitempty"`                     // The guild member this voice state is for
-	SessionID               string       `json:"session_id"`                           // The session id for this voice state
-	Deaf                    bool         `json:"deaf"`                                 // Whether this user is deafened by the server
-	Mute                    bool         `json:"mute"`                                 // Whether this user is muted by the server
-	SelfDeaf                bool         `json:"self_deaf"`                            // Whether this user is locally deafened
-	SelfMute                bool         `json:"self_mute"`                            // Whether this user is locally muted
-	SelfStream              *bool        `json:"self_stream,omitempty"`                // Whether this user is streaming using "Go Live"
-	SelfVideo               bool         `json:"self_video"`                           // Whether this user's camera is enabled
-	Suppress                bool         `json:"suppress"`                             // Whether this user's permission to speak is denied
-	RequestToSpeakTimestamp *time.Time   `json:"request_to_speak_timestamp,omitempty"` // The time at which the user requested to speak
+	GuildID                 *string      `json:"guild_id,omitempty"`                   // The guild id this voice state is for.
+	ChannelID               *string      `json:"channel_id,omitempty"`                 // The channel id this user is connected to.
+	UserID                  string       `json:"user_id"`                              // The user id this voice state is for.
+	Member                  *GuildMember `json:"member,omitempty"`                     // The guild member this voice state is for.
+	SessionID               string       `json:"session_id"`                           // The session id for this voice state.
+	Deaf                    bool         `json:"deaf"`                                 // Whether this user is deafened by the server.
+	Mute                    bool         `json:"mute"`                                 // Whether this user is muted by the server.
+	SelfDeaf                bool         `json:"self_deaf"`                            // Whether this user is locally deafened.
+	SelfMute                bool         `json:"self_mute"`                            // Whether this user is locally muted.
+	SelfStream              *bool        `json:"self_stream,omitempty"`                // Whether this user is streaming using "Go Live".
+	SelfVideo               bool         `json:"self_video"`                           // Whether this user's camera is enabled.
+	Suppress                bool         `json:"suppress"`                             // Whether this user's permission to speak is denied.
+	RequestToSpeakTimestamp *time.Time   `json:"request_to_speak_timestamp,omitempty"` // The time at which the user requested to speak.
 }
 
 type GuildMember struct {
@@ -393,13 +393,13 @@ const (
 
 // StageInstance represents a live stage instance.
 type StageInstance struct {
-	ID                    string                    `json:"id"`                       // The id of this Stage instance
-	GuildID               string                    `json:"guild_id"`                 // The guild id of the associated Stage channel
-	ChannelID             string                    `json:"channel_id"`               // The id of the associated Stage channel
-	Topic                 string                    `json:"topic"`                    // The topic of the Stage instance (1-120 characters)
-	PrivacyLevel          StageInstancePrivacyLevel `json:"privacy_level"`            // The privacy level of the Stage instance
-	DiscoverableDisabled  bool                      `json:"discoverable_disabled"`    // Whether or not Stage Discovery is disabled (deprecated)
-	GuildScheduledEventID string                    `json:"guild_scheduled_event_id"` // The id of the scheduled event for this Stage instance
+	ID                    string                    `json:"id"`                       // The id of this Stage instance.
+	GuildID               string                    `json:"guild_id"`                 // The guild id of the associated Stage channel.
+	ChannelID             string                    `json:"channel_id"`               // The id of the associated Stage channel.
+	Topic                 string                    `json:"topic"`                    // The topic of the Stage instance (1-120 characters).
+	PrivacyLevel          StageInstancePrivacyLevel `json:"privacy_level"`            // The privacy level of the Stage instance.
+	DiscoverableDisabled  bool                      `json:"discoverable_disabled"`    // Whether or not Stage Discovery is disabled (deprecated).
+	GuildScheduledEventID string                    `json:"guild_scheduled_event_id"` // The id of the scheduled event for this Stage instance.
 }
 
 // StageInstancePrivacyLevel represents the privacy level of a Stage instance.
@@ -564,7 +564,7 @@ type ForumTag struct {
 // DefaultReaction describes the default reaction.
 // At most one of emoji_id and emoji_name may be set to a non-null value.
 type DefaultReaction struct {
-	// EmojiID is the id of a guild's custom emjoi
+	// EmojiID is the id of a guild's custom emjoi.
 	EmojiID *string `json:"emoji_id,omitempty"`
 	// EmojiName is the unicode character for the emoji.
 	EmojiName *string `json:"emoji_name,omitempty"`
@@ -854,37 +854,37 @@ type AutoModerationActionExecutionEvent struct {
 
 // Entitlement represents an entitlement object.
 type Entitlement struct {
-	ID            string          `json:"id"`                  // ID of the entitlement
-	SKU_ID        string          `json:"sku_id"`              // ID of the SKU
-	ApplicationID string          `json:"application_id"`      // ID of the parent application
-	UserID        *string         `json:"user_id,omitempty"`   // ID of the user that is granted access to the entitlement's sku
-	Type          EntitlementType `json:"type"`                // Type of entitlement
-	Deleted       bool            `json:"deleted"`             // Entitlement was deleted
+	ID            string          `json:"id"`                  // ID of the entitlement.
+	SKU_ID        string          `json:"sku_id"`              // ID of the SKU.
+	ApplicationID string          `json:"application_id"`      // ID of the parent application.
+	UserID        *string         `json:"user_id,omitempty"`   // ID of the user that is granted access to the entitlement's sku.
+	Type          EntitlementType `json:"type"`                // Type of entitlement.
+	Deleted       bool            `json:"deleted"`             // Entitlement was deleted.
 	StartsAt      *time.Time      `json:"starts_at,omitempty"` // Start date at which the entitlement is valid. Not present when using test entitlements.
 	EndsAt        *time.Time      `json:"ends_at,omitempty"`   // Date at which the entitlement is no longer valid. Not present when using test entitlements.
-	GuildID       *string         `json:"guild_id,omitempty"`  // ID of the guild that is granted access to the entitlement's sku
+	GuildID       *string         `json:"guild_id,omitempty"`  // ID of the guild that is granted access to the entitlement's sku.
 }
 
 type EntitlementType int
 
 const (
-	EntitlementTypeApplicationSubscription EntitlementType = 8 // EntitlementType was purchased as an app subscription
+	EntitlementTypeApplicationSubscription EntitlementType = 8 // EntitlementType was purchased as an app subscription.
 )
 
 type AuditLogEntry struct {
-	TargetID   *string          `json:"target_id,omitempty"` // ID of the affected entity (webhook, user, role, etc.)
-	Changes    []AuditLogChange `json:"changes,omitempty"`   // Changes made to the target_id
-	UserID     *string          `json:"user_id,omitempty"`   // User or app that made the changes
-	ID         string           `json:"id"`                  // ID of the entry
-	ActionType AuditLogEvent    `json:"action_type"`         // Type of action that occurred
-	Options    *AuditEntryInfo  `json:"options,omitempty"`   // Additional info for certain event types
-	Reason     *string          `json:"reason,omitempty"`    // Reason for the change (1-512 characters)
+	TargetID   *string          `json:"target_id,omitempty"` // ID of the affected entity (webhook, user, role, etc.).
+	Changes    []AuditLogChange `json:"changes,omitempty"`   // Changes made to the target_id.
+	UserID     *string          `json:"user_id,omitempty"`   // User or app that made the changes.
+	ID         string           `json:"id"`                  // ID of the entry.
+	ActionType AuditLogEvent    `json:"action_type"`         // Type of action that occurred.
+	Options    *AuditEntryInfo  `json:"options,omitempty"`   // Additional info for certain event types.
+	Reason     *string          `json:"reason,omitempty"`    // Reason for the change (1-512 characters).
 }
 
 type AuditLogChange struct {
-	NewValue any    `json:"new_value,omitempty"` // New value of the key. TODO: avoid any if possible
-	OldValue any    `json:"old_value,omitempty"` // Old value of the key. TODO: avoid any if possible
-	Key      string `json:"key"`                 // Key representing the changed property
+	NewValue any    `json:"new_value,omitempty"` // New value of the key. TODO: avoid any if possible.
+	OldValue any    `json:"old_value,omitempty"` // Old value of the key. TODO: avoid any if possible.
+	Key      string `json:"key"`                 // Key representing the changed property.
 }
 
 type AuditLogEvent int
@@ -949,44 +949,44 @@ const (
 )
 
 type AuditEntryInfo struct {
-	ApplicationID                 string `json:"application_id"`                    // ID of the app whose permissions were targeted (APPLICATION_COMMAND_PERMISSION_UPDATE)
-	AutoModerationRuleName        string `json:"auto_moderation_rule_name"`         // Name of the Auto Moderation rule that was triggered (AUTO_MODERATION_BLOCK_MESSAGE, AUTO_MODERATION_FLAG_TO_CHANNEL, AUTO_MODERATION_USER_COMMUNICATION_DISABLED)
-	AutoModerationRuleTriggerType string `json:"auto_moderation_rule_trigger_type"` // Trigger type of the Auto Moderation rule that was triggered (AUTO_MODERATION_BLOCK_MESSAGE, AUTO_MODERATION_FLAG_TO_CHANNEL, AUTO_MODERATION_USER_COMMUNICATION_DISABLED)
-	ChannelID                     string `json:"channel_id"`                        // Channel in which the entities were targeted (MEMBER_MOVE, MESSAGE_PIN, MESSAGE_UNPIN, MESSAGE_DELETE, STAGE_INSTANCE_CREATE, STAGE_INSTANCE_UPDATE, STAGE_INSTANCE_DELETE, AUTO_MODERATION_BLOCK_MESSAGE, AUTO_MODERATION_FLAG_TO_CHANNEL, AUTO_MODERATION_USER_COMMUNICATION_DISABLED)
-	Count                         string `json:"count"`                             // Number of entities that were targeted (MESSAGE_DELETE, MESSAGE_BULK_DELETE, MEMBER_DISCONNECT, MEMBER_MOVE)
-	DeleteMemberDays              string `json:"delete_member_days"`                // Number of days after which inactive members were kicked (MEMBER_PRUNE)
-	ID                            string `json:"id"`                                // ID of the overwritten entity (CHANNEL_OVERWRITE_CREATE, CHANNEL_OVERWRITE_UPDATE, CHANNEL_OVERWRITE_DELETE)
-	MembersRemoved                string `json:"members_removed"`                   // Number of members removed by the prune (MEMBER_PRUNE)
-	MessageID                     string `json:"message_id"`                        // ID of the message that was targeted (MESSAGE_PIN, MESSAGE_UNPIN)
-	RoleName                      string `json:"role_name"`                         // Name of the role if type is "0" (not present if type is "1") (CHANNEL_OVERWRITE_CREATE, CHANNEL_OVERWRITE_UPDATE, CHANNEL_OVERWRITE_DELETE)
-	Type                          string `json:"type"`                              // Type of overwritten entity - role ("0") or member ("1") (CHANNEL_OVERWRITE_CREATE, CHANNEL_OVERWRITE_UPDATE, CHANNEL_OVERWRITE_DELETE)
-	IntegrationType               string `json:"integration_type"`                  // The type of integration which performed the action (MEMBER_KICK, MEMBER_ROLE_UPDATE)
+	ApplicationID                 string `json:"application_id"`                    // ID of the app whose permissions were targeted (APPLICATION_COMMAND_PERMISSION_UPDATE).
+	AutoModerationRuleName        string `json:"auto_moderation_rule_name"`         // Name of the Auto Moderation rule that was triggered (AUTO_MODERATION_BLOCK_MESSAGE, AUTO_MODERATION_FLAG_TO_CHANNEL, AUTO_MODERATION_USER_COMMUNICATION_DISABLED).
+	AutoModerationRuleTriggerType string `json:"auto_moderation_rule_trigger_type"` // Trigger type of the Auto Moderation rule that was triggered (AUTO_MODERATION_BLOCK_MESSAGE, AUTO_MODERATION_FLAG_TO_CHANNEL, AUTO_MODERATION_USER_COMMUNICATION_DISABLED).
+	ChannelID                     string `json:"channel_id"`                        // Channel in which the entities were targeted (MEMBER_MOVE, MESSAGE_PIN, MESSAGE_UNPIN, MESSAGE_DELETE, STAGE_INSTANCE_CREATE, STAGE_INSTANCE_UPDATE, STAGE_INSTANCE_DELETE, AUTO_MODERATION_BLOCK_MESSAGE, AUTO_MODERATION_FLAG_TO_CHANNEL, AUTO_MODERATION_USER_COMMUNICATION_DISABLED).
+	Count                         string `json:"count"`                             // Number of entities that were targeted (MESSAGE_DELETE, MESSAGE_BULK_DELETE, MEMBER_DISCONNECT, MEMBER_MOVE).
+	DeleteMemberDays              string `json:"delete_member_days"`                // Number of days after which inactive members were kicked (MEMBER_PRUNE).
+	ID                            string `json:"id"`                                // ID of the overwritten entity (CHANNEL_OVERWRITE_CREATE, CHANNEL_OVERWRITE_UPDATE, CHANNEL_OVERWRITE_DELETE).
+	MembersRemoved                string `json:"members_removed"`                   // Number of members removed by the prune (MEMBER_PRUNE).
+	MessageID                     string `json:"message_id"`                        // ID of the message that was targeted (MESSAGE_PIN, MESSAGE_UNPIN).
+	RoleName                      string `json:"role_name"`                         // Name of the role if type is "0" (not present if type is "1") (CHANNEL_OVERWRITE_CREATE, CHANNEL_OVERWRITE_UPDATE, CHANNEL_OVERWRITE_DELETE).
+	Type                          string `json:"type"`                              // Type of overwritten entity - role ("0") or member ("1") (CHANNEL_OVERWRITE_CREATE, CHANNEL_OVERWRITE_UPDATE, CHANNEL_OVERWRITE_DELETE).
+	IntegrationType               string `json:"integration_type"`                  // The type of integration which performed the action (MEMBER_KICK, MEMBER_ROLE_UPDATE).
 }
 
 type GuildScheduledEvent struct {
-	ID                 string                             `json:"id"`                           // The id of the scheduled event
-	GuildID            string                             `json:"guild_id"`                     // The guild id which the scheduled event belongs to
-	ChannelID          *string                            `json:"channel_id,omitempty"`         // The channel id in which the scheduled event will be hosted, or null if scheduled entity type is EXTERNAL
-	CreatorID          *string                            `json:"creator_id,omitempty"`         // The id of the user that created the scheduled event
-	Name               string                             `json:"name"`                         // The name of the scheduled event (1-100 characters)
-	Description        *string                            `json:"description,omitempty"`        // The description of the scheduled event (1-1000 characters)
-	ScheduledStartTime string                             `json:"scheduled_start_time"`         // The time the scheduled event will start
-	ScheduledEndTime   *string                            `json:"scheduled_end_time,omitempty"` // The time the scheduled event will end, required if entity_type is EXTERNAL
-	PrivacyLevel       GuildScheduledEventPrivacyLevel    `json:"privacy_level"`                // The privacy level of the scheduled event
-	Status             GuildScheduledEventStatus          `json:"status"`                       // The status of the scheduled event
-	EntityType         GuildScheduledEventEntityType      `json:"entity_type"`                  // The type of the scheduled event
-	EntityID           *string                            `json:"entity_id,omitempty"`          // The id of an entity associated with a guild scheduled event
-	EntityMetadata     *GuildScheduledEventEntityMetadata `json:"entity_metadata,omitempty"`    // Additional metadata for the guild scheduled event
-	Creator            *User                              `json:"creator,omitempty"`            // The user that created the scheduled event
-	UserCount          *int                               `json:"user_count,omitempty"`         // The number of users subscribed to the scheduled event
-	Image              *string                            `json:"image,omitempty"`              // The cover image hash of the scheduled event
+	ID                 string                             `json:"id"`                           // The id of the scheduled event.
+	GuildID            string                             `json:"guild_id"`                     // The guild id which the scheduled event belongs to.
+	ChannelID          *string                            `json:"channel_id,omitempty"`         // The channel id in which the scheduled event will be hosted, or null if scheduled entity type is EXTERNAL.
+	CreatorID          *string                            `json:"creator_id,omitempty"`         // The id of the user that created the scheduled event.
+	Name               string                             `json:"name"`                         // The name of the scheduled event (1-100 characters).
+	Description        *string                            `json:"description,omitempty"`        // The description of the scheduled event (1-1000 characters).
+	ScheduledStartTime string                             `json:"scheduled_start_time"`         // The time the scheduled event will start.
+	ScheduledEndTime   *string                            `json:"scheduled_end_time,omitempty"` // The time the scheduled event will end, required if entity_type is EXTERNAL.
+	PrivacyLevel       GuildScheduledEventPrivacyLevel    `json:"privacy_level"`                // The privacy level of the scheduled event.
+	Status             GuildScheduledEventStatus          `json:"status"`                       // The status of the scheduled event.
+	EntityType         GuildScheduledEventEntityType      `json:"entity_type"`                  // The type of the scheduled event.
+	EntityID           *string                            `json:"entity_id,omitempty"`          // The id of an entity associated with a guild scheduled event.
+	EntityMetadata     *GuildScheduledEventEntityMetadata `json:"entity_metadata,omitempty"`    // Additional metadata for the guild scheduled event.
+	Creator            *User                              `json:"creator,omitempty"`            // The user that created the scheduled event.
+	UserCount          *int                               `json:"user_count,omitempty"`         // The number of users subscribed to the scheduled event.
+	Image              *string                            `json:"image,omitempty"`              // The cover image hash of the scheduled event.
 }
 
 // GuildScheduledEventPrivacyLevel represents the privacy level of a guild scheduled event.
 type GuildScheduledEventPrivacyLevel int
 
 const (
-	GuildScheduledEVentPrivacyLevelGuildOnly GuildScheduledEventPrivacyLevel = 2 // The scheduled event is only accessible to guild members
+	GuildScheduledEVentPrivacyLevelGuildOnly GuildScheduledEventPrivacyLevel = 2 // The scheduled event is only accessible to guild members.
 )
 
 // GuildScheduledEventEntityType represents the type of a guild scheduled event.
@@ -1268,10 +1268,10 @@ type MessageActivity struct {
 
 // MessageReference represents a reference to a message.
 type MessageReference struct {
-	MessageID       *string `json:"message_id"`         // ID of the originating message
+	MessageID       *string `json:"message_id"`         // ID of the originating message.
 	ChannelID       *string `json:"channel_id"`         // ID of the originating message's channel. Channel_id is optional when creating a reply, but will always be present when receiving an event/response that includes this data model.
-	GuildID         *string `json:"guild_id"`           // ID of the originating message's guild
-	FailIfNotExists *bool   `json:"fail_if_not_exists"` // When sending, whether to error if the referenced message doesn't exist instead of sending as a normal (non-reply) message, default true
+	GuildID         *string `json:"guild_id"`           // ID of the originating message's guild.
+	FailIfNotExists *bool   `json:"fail_if_not_exists"` // When sending, whether to error if the referenced message doesn't exist instead of sending as a normal (non-reply) message, default true.
 }
 
 type MessageActivityType int
@@ -1285,11 +1285,11 @@ const (
 
 // MessageInteraction represents an interaction that occurs within a message.
 type MessageInteraction struct {
-	ID     string                 `json:"id"`               // ID of the interaction
-	Type   MessageInteractionType `json:"type"`             // Type of interaction
-	Name   string                 `json:"name"`             // Name of the application command, including subcommands and subcommand groups
-	User   User                   `json:"user"`             // User who invoked the interaction
-	Member *GuildMember           `json:"member,omitempty"` // Member who invoked the interaction in the guild
+	ID     string                 `json:"id"`               // ID of the interaction.
+	Type   MessageInteractionType `json:"type"`             // Type of interaction.
+	Name   string                 `json:"name"`             // Name of the application command, including subcommands and subcommand groups.
+	User   User                   `json:"user"`             // User who invoked the interaction.
+	Member *GuildMember           `json:"member,omitempty"` // Member who invoked the interaction in the guild.
 }
 
 // MessageInteractionType represents the type of message interaction.
@@ -1357,13 +1357,13 @@ const (
 
 // Button represents a button component within a message.
 type Button struct {
-	Type     ComponentType `json:"type"`                // Type of component (always 2 for a button)
-	Style    ButtonStyle   `json:"style"`               // Style of the button
-	Label    *string       `json:"label,omitempty"`     // Text that appears on the button; max 80 characters
-	Emoji    *Emoji        `json:"emoji,omitempty"`     // Emoji for the button
-	CustomID *string       `json:"custom_id,omitempty"` // Developer-defined identifier for the button; max 100 characters
-	URL      *string       `json:"url,omitempty"`       // URL for link-style buttons
-	Disabled *bool         `json:"disabled,omitempty"`  // Whether the button is disabled (defaults to false)
+	Type     ComponentType `json:"type"`                // Type of component (always 2 for a button).
+	Style    ButtonStyle   `json:"style"`               // Style of the button.
+	Label    *string       `json:"label,omitempty"`     // Text that appears on the button; max 80 characters.
+	Emoji    *Emoji        `json:"emoji,omitempty"`     // Emoji for the button.
+	CustomID *string       `json:"custom_id,omitempty"` // Developer-defined identifier for the button; max 100 characters.
+	URL      *string       `json:"url,omitempty"`       // URL for link-style buttons.
+	Disabled *bool         `json:"disabled,omitempty"`  // Whether the button is disabled (defaults to false).
 }
 
 // ButtonStyle represents the style of a button component.
@@ -1388,7 +1388,7 @@ const (
 
 // SelectMenu represents a select menu component.
 type SelectMenu struct {
-	Type          ComponentType         `json:"type"`                     // Type of select menu component (text: 3, user: 5, role: 6, mentionable: 7, channels: 8)
+	Type          ComponentType         `json:"type"`                     // Type of select menu component (text: 3, user: 5, role: 6, mentionable: 7, channels: 8).
 	CustomID      string                `json:"custom_id"`                // ID for the select menu. Max 100 characters.
 	Options       []*SelectOption       `json:"options,omitempty"`        // Specified choices in a select menu. Only required and available for string selects (type 3). Max 25.
 	ChannelTypes  []int                 `json:"channel_types,omitempty"`  // List of channel types to include in the channel select component (type 8).
@@ -1464,9 +1464,9 @@ type MessageResolvedData struct {
 // AllowedMentions represents allowed mentions for the message.
 type AllowedMentions struct {
 	Parse       []string `json:"parse,omitempty"`        // An array of allowed mention types to parse from the content.
-	Roles       []string `json:"roles,omitempty"`        // Array of role_ids to mention (Max size of 100)
-	Users       []string `json:"users,omitempty"`        // Array of user_ids to mention (Max size of 100)
-	RepliedUser bool     `json:"replied_user,omitempty"` // For replies, whether to mention the author of the message being replied to (default false)
+	Roles       []string `json:"roles,omitempty"`        // Array of role_ids to mention (Max size of 100).
+	Users       []string `json:"users,omitempty"`        // Array of user_ids to mention (Max size of 100).
+	RepliedUser bool     `json:"replied_user,omitempty"` // For replies, whether to mention the author of the message being replied to (default false).
 }
 
 // AllowedMentionType represents the type of allowed mentions.

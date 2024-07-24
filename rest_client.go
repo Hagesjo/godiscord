@@ -24,8 +24,7 @@ func (t *transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.underlyingTransport.RoundTrip(req)
 }
 
-type RestClient interface {
-}
+type RestClient interface{}
 
 func newRestClient(client *http.Client, authToken string) (*restClient, error) {
 	baseURL, err := url.JoinPath(restBaseURL, fmt.Sprintf("api/v%d", apiVersion))
@@ -179,18 +178,18 @@ func (c *restClient) GetGatewayURL() (string, error) {
 //	  }]
 //	}
 type MessageCreateRequest struct {
-	Content          string              `json:"content,omitempty"`           // Message contents (up to 2000 characters)
+	Content          string              `json:"content,omitempty"`           // Message contents (up to 2000 characters).
 	Nonce            string              `json:"nonce,omitempty"`             // Can be used to verify a message was sent (up to 25 characters). Value will appear in the Message Create event.
 	TTS              bool                `json:"tts,omitempty"`               // true if this is a TTS message
-	Embeds           []Embed             `json:"embeds,omitempty"`            // Up to 10 rich embeds (up to 6000 characters)
-	AllowedMentions  *AllowedMentions    `json:"allowed_mentions,omitempty"`  // Allowed mentions for the message
-	MessageReference *MessageReference   `json:"message_reference,omitempty"` // Include to make your message a reply
-	Components       []MessageActionType `json:"components,omitempty"`        // Components to include with the message
-	StickerIDs       []string            `json:"sticker_ids,omitempty"`       // IDs of up to 3 stickers in the server to send in the message
-	Files            map[string][]byte   `json:"files,omitempty"`             // Contents of the file being sent. See Uploading Files
-	PayloadJSON      string              `json:"payload_json,omitempty"`      // JSON-encoded body of non-file params, only for multipart/form-data requests. See Uploading Files
-	Attachments      []MessageAttachment `json:"attachments,omitempty"`       // Attachment objects with filename and description. See Uploading Files
-	Flags            int                 `json:"flags,omitempty"`             // Message flags combined as a bitfield (only SUPPRESS_EMBEDS and SUPPRESS_NOTIFICATIONS can be set)
+	Embeds           []Embed             `json:"embeds,omitempty"`            // Up to 10 rich embeds (up to 6000 characters).
+	AllowedMentions  *AllowedMentions    `json:"allowed_mentions,omitempty"`  // Allowed mentions for the message.
+	MessageReference *MessageReference   `json:"message_reference,omitempty"` // Include to make your message a reply.
+	Components       []MessageActionType `json:"components,omitempty"`        // Components to include with the message.
+	StickerIDs       []string            `json:"sticker_ids,omitempty"`       // IDs of up to 3 stickers in the server to send in the message.
+	Files            map[string][]byte   `json:"files,omitempty"`             // Contents of the file being sent. See Uploading Files.
+	PayloadJSON      string              `json:"payload_json,omitempty"`      // JSON-encoded body of non-file params, only for multipart/form-data requests. See Uploading Files.
+	Attachments      []MessageAttachment `json:"attachments,omitempty"`       // Attachment objects with filename and description. See Uploading Files.
+	Flags            int                 `json:"flags,omitempty"`             // Message flags combined as a bitfield (only SUPPRESS_EMBEDS and SUPPRESS_NOTIFICATIONS can be set).
 }
 
 type MessageCreateResponse struct {
