@@ -63,6 +63,10 @@ func (f *Fetcher) SendEmbeds(channelID string, embeds []Embed) error {
 	})
 }
 
+func (f *Fetcher) CreateThread(channelID, messageID string, req CreateThreadRequest) error {
+	return f.restClient.CreateThread(channelID, messageID, req)
+}
+
 func (f *Fetcher) Do(path, method string, res any, resp any) error {
 	return f.restClient.do(path, method, res, resp)
 }
@@ -101,7 +105,7 @@ func (f *Fetcher) GetChannelByID(channelID string) (Channel, bool) {
 
 func (f *Fetcher) GetChannelByName(name string) (Channel, bool) {
 	// TODO: inefficient. If it becomes a problem, save channels by name as well in a dict (and update it on received event).
-	cs :=  Filter(f.GetChannels(), func(channel Channel) bool {
+	cs := Filter(f.GetChannels(), func(channel Channel) bool {
 		return channel.Name != nil && *channel.Name == name
 	})
 

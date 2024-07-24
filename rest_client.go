@@ -218,6 +218,29 @@ func (c *restClient) MessageSend(channelID string, req MessageCreateRequest) err
 	return nil
 }
 
+type CreateThreadRequest struct {
+	// Name is the channel name and must be between 1 and 100 characters.
+	Name string `json:"name" validate:"required,min=1,max=100"`
+
+	// AutoArchiveDuration is the number of minutes before a thread stops showing in the channel list due to inactivity.
+	// It can be set to one of the following values: 60, 1440, 4320, 10080. This field is optional.
+	AutoArchiveDuration *int `json:"auto_archive_duration,omitempty" validate:"omitempty,oneof=60 1440 4320 10080"`
+
+	// RateLimitPerUser is the number of seconds a user has to wait before sending another message.
+	// It must be between 0 and 21600 seconds. This field is optional.
+	RateLimitPerUser *int `json:"rate_limit_per_user,omitempty" validate:"omitempty,min=0,max=21600"`
+}
+
+func (c *restClient) CreateThread(channelID, messageID string, req CreateThreadRequest) error {
+	path := fmt.Sprintf("/channels/%s/messages/%s/threads", channelID, messageID)
+	err := c.post(path, req, nil)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 type CreateChannelRequest struct {
 	Name      *string     `json:"name,omitempty"`
 	Type      ChannelType `json:"type"`
