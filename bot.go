@@ -170,7 +170,7 @@ func (b *Bot) SendMessage(guildName, channelName, message string) error {
 		return fmt.Errorf("failed to get guild: %w", err)
 	}
 
-	f := b.fetchersByGuild[g.Name]
+	f := b.fetchersByGuild[g.ID]
 	c, found := f.GetChannelByName(channelName)
 	if !found {
 		return fmt.Errorf("no channel found")
