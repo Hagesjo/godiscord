@@ -33,13 +33,9 @@ func newRestClient(client *http.Client, authToken string) (*restClient, error) {
 	}
 
 	restClient := &restClient{
-		httpClient: http.DefaultClient,
+		httpClient: client,
 		baseURL:    baseURL,
 		authToken:  authToken,
-	}
-
-	if client != nil {
-		restClient.httpClient = client
 	}
 
 	restClient.httpClient.Transport = &transport{

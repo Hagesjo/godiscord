@@ -16,7 +16,7 @@ import (
 )
 
 func NewBot(token, prefix string) (*Bot, error) {
-	restClient, err := newRestClient(http.DefaultClient, token)
+	restClient, err := newRestClient(&http.Client{}, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate rest client: %w", err)
 	}
