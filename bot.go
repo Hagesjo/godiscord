@@ -16,7 +16,7 @@ import (
 )
 
 func NewBot(token, prefix string) (*Bot, error) {
-	restClient, err := newRestClient(http.DefaultClient, token)
+	restClient, err := newRestClient(&http.Client{}, token)
 	if err != nil {
 		return nil, fmt.Errorf("failed to initiate rest client: %w", err)
 	}
@@ -110,13 +110,22 @@ func (b *Bot) ListGuilds() (guilds []Guild) {
 	return guilds
 }
 
-func (b *Bot) GetGuild(id string) (Guild, error) {
+func (b *Bot) GetGuildByID(id string) (Guild, error) {
 	guild, ok := b.guilds[id]
 	if !ok {
 		return guild, fmt.Errorf("guild not found")
 	}
 
 	return guild, nil
+}
+func (b *Bot) GetGuildByName(name string) (Guild, error) {
+	for _, g := range b.ListGuilds() {
+		if g.Name == name {
+			return g, nil
+		}
+	}
+
+	return Guild{}, fmt.Errorf("not found")
 }
 
 func (b *Bot) GetVoiceStates(guildID string) ([]VoiceState, error) {
@@ -153,6 +162,25 @@ func (b *Bot) GetMembersByIDs(guildID string, memberIDs ...string) ([]GuildMembe
 	}
 
 	return f.GetMembersByIDs(memberIDs...), nil
+}
+
+func (b *Bot) SendMessage(guildName, channelName, message string) error {
+	g, err := b.GetGuildByName(guildName)
+	if err != nil {
+		return fmt.Errorf("failed to get guild: %w", err)
+	}
+
+	f := b.fetchersByGuild[g.ID]
+	c, found := f.GetChannelByName(channelName)
+	if !found {
+		return fmt.Errorf("no channel found")
+	}
+
+	if _, err := f.SendContent(c.ID, message); err != nil {
+		return fmt.Errorf("failed to send message: %w", err)
+	}
+
+	return nil
 }
 
 func (b *Bot) Run() error {
