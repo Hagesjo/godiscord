@@ -668,7 +668,6 @@ func (b *Bot) handleDispatch(event Event) error {
 	case "INVITE_DELETE":
 		ev = MustUnmarshalJSON[InviteDelete](*event.Data)
 	case "MESSAGE_CREATE":
-		fmt.Println(string(*event.Data))
 		messageCreate := MustUnmarshalJSON[MessageCreate](*event.Data)
 
 		if strings.HasPrefix(messageCreate.Content, b.prefix) {
