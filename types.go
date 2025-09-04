@@ -3,6 +3,7 @@ package godiscord
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -297,6 +298,31 @@ type VoiceState struct {
 	RequestToSpeakTimestamp *time.Time   `json:"request_to_speak_timestamp,omitempty"` // The time at which the user requested to speak.
 }
 
+type Permission uint64
+
+func (p *Permission) UnmarshalJSON(data []byte) error {
+	// Try number first
+	var num uint64
+	if err := json.Unmarshal(data, &num); err == nil {
+		*p = Permission(num)
+		return nil
+	}
+
+	// Try string
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		val, err := strconv.ParseUint(s, 10, 64)
+		if err != nil {
+			return err
+		}
+		*p = Permission(val)
+		return nil
+	}
+
+	// Neither worked
+	return fmt.Errorf("invalid permissions value: %s", string(data))
+}
+
 type GuildMember struct {
 	// User can be nil if the user associated with the guild member is deleted or otherwise inaccessible.
 	// This situation might occur, for example, if a user deletes their account or is banned from the server.
@@ -307,12 +333,12 @@ type GuildMember struct {
 	JoinedAt     time.Time  `json:"joined_at"`
 	PremiumSince *time.Time `json:"premium_since,omitempty"`
 	// Flags are guild member flags represented as a bit set, defaults to 0.
-	Flags                      int        `json:"flags"`
-	Deaf                       bool       `json:"deaf"`
-	Mute                       bool       `json:"mute"`
-	Pending                    *bool      `json:"pending,omitempty"`
-	Permissions                *int       `json:"permissions,omitempty"`
-	CommunicationDisabledUntil *time.Time `json:"communication_disabled_until,omitempty"`
+	Flags                      int         `json:"flags"`
+	Deaf                       bool        `json:"deaf"`
+	Mute                       bool        `json:"mute"`
+	Pending                    *bool       `json:"pending,omitempty"`
+	Permissions                *Permission `json:"permissions,omitempty"`
+	CommunicationDisabledUntil *time.Time  `json:"communication_disabled_until,omitempty"`
 }
 
 type GuildMemberFlag int
@@ -362,7 +388,7 @@ type Channel struct {
 	ThreadMetadata                *ThreadMetadata     `json:"thread_metadata,omitempty"`
 	Member                        *ThreadMember       `json:"member,omitempty"`
 	DefaultAutoArchiveDuration    *int                `json:"default_auto_archive_duration,omitempty"`
-	Permissions                   *int                `json:"permissions,omitempty"`
+	Permissions                   *Permission         `json:"permissions,omitempty"`
 	Flags                         *int                `json:"flags,omitempty"`
 	TotalMessagesSent             *int                `json:"total_messages_sent,omitempty"`
 	AvailableTags                 []ForumTag          `json:"available_tags,omitempty"`
